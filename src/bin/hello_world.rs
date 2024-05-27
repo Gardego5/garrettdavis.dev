@@ -1,5 +1,5 @@
 use aws_lambda_events::{
-    apigw::{ApiGatewayProxyRequest, ApiGatewayProxyResponse},
+    apigw::{ApiGatewayV2httpRequest, ApiGatewayV2httpResponse},
     encodings::Body,
 };
 use base64::Engine;
@@ -10,18 +10,21 @@ use maud::Render;
 use garrettdavis_dev_cargo_lambda::Base64Body;
 
 async fn handler(
-    event: LambdaEvent<ApiGatewayProxyRequest>,
-) -> Result<ApiGatewayProxyResponse, Error> {
+    event: LambdaEvent<ApiGatewayV2httpRequest>,
+) -> Result<ApiGatewayV2httpResponse, Error> {
     let page = Base64Body(maud::html! { (maud::DOCTYPE) html {
         head {
             title {"Test"}
+            link rel="stylesheet" href="/static/style.css";
         }
+
         body {
             @if let Some(body) = event.payload.body {
                 @let body = base64::engine::general_purpose::STANDARD.decode(body).unwrap();
                 @let body = String::from_utf8(body).unwrap();
                 p { "Body: " (body) }
             }
+
             table {
                 caption { "query string parameters" }
                 thead {
@@ -33,21 +36,10 @@ async fn handler(
                     }
                 }
             }
-            table {
-                caption { "multi value query string parameters" }
-                thead {
-                    tr { th { "key" } th { "value" } }
-                }
-                tbody {
-                    @for (k, v) in event.payload.multi_value_query_string_parameters.iter() {
-                        tr { td { (k) } td { (v) } }
-                    }
-                }
-            }
         }
     }});
 
-    Ok(ApiGatewayProxyResponse {
+    Ok(ApiGatewayV2httpResponse {
         body: Some(Body::Text(page.render().into())),
         headers: {
             let mut headers = HeaderMap::new();
@@ -57,6 +49,7 @@ async fn handler(
         status_code: 200,
         is_base64_encoded: true,
         multi_value_headers: HeaderMap::new(),
+        cookies: vec![],
     })
 }
 

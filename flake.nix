@@ -20,10 +20,21 @@
   outputs = { nixpkgs, naersk, fenix, terranix, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        app_name = "garrettdavis_dev";
+
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
         };
+        lib = pkgs.lib;
+
+        getDir = dir:
+          builtins.mapAttrs (file: type:
+            if type == "directory" then getDir "${dir}/${file}" else type)
+          (builtins.readDir dir);
+        getFiles = dir:
+          lib.collect builtins.isString (lib.mapAttrsRecursive
+            (path: type: builtins.concatStringsSep "/" path) (getDir dir));
 
         toolchain = with fenix.packages.${system};
           combine [
@@ -48,7 +59,7 @@
               "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
             rustTargetPlatform =
               crossPkgs.rust.toRustTarget crossPkgs.stdenv.targetPlatform;
-            rustTargetPlatformUpper = pkgs.lib.toUpper
+            rustTargetPlatformUpper = lib.toUpper
               (builtins.replaceStrings [ "-" ] [ "_" ] rustTargetPlatform);
           in naersk'.buildPackage (args // {
             "CARGO_BUILD_TARGET" = target;
@@ -61,43 +72,103 @@
             strictDeps = true;
           });
 
-        lambdaBinaries = [ "hello_world" ];
+        css = pkgs.stdenv.mkDerivation {
+          name = "output.css";
+          buildCommand = let
+            config = ./tailwind.config.js;
+            input = ./src/input.css;
+          in "${pkgs.tailwindcss}/bin/tailwindcss -c ${config} -i ${input} -o $out --minify";
+        };
 
-        lambdaPackages = pkgs.lib.listToAttrs (builtins.map (name: {
+        lambdaBinNames = let
+          isRustFile = name: dirEntryType:
+            dirEntryType == "regular" && lib.hasSuffix ".rs" name;
+          toRustBinaryName = name: lib.removeSuffix ".rs" name;
+        in map toRustBinaryName (builtins.attrNames
+          (lib.attrsets.filterAttrs isRustFile (builtins.readDir ./src/bin)));
+        lambdaBinaries = naerskBuildPackage "aarch64-unknown-linux-musl" { };
+        lambdaPackages = lib.listToAttrs (map (name: {
           inherit name;
-          value = naerskBuildPackage "aarch64-unknown-linux-musl" {
-            pname = name;
-            postInstall = "mv $out/bin/${name} $out/bin/bootstrap ";
+          value = pkgs.stdenv.mkDerivation {
+            inherit name;
+            buildCommand = ''
+              mkdir $out
+              cp ${lambdaBinaries}/bin/${name} $out/bootstrap
+            '';
           };
-        }) lambdaBinaries);
+        }) lambdaBinNames);
+
+        lambdas = {
+          hello_world = { source_dir = toString lambdaPackages.hello_world; };
+          resume = { source_dir = toString lambdaPackages.resume; };
+        };
+
+        endpoints = [
+          {
+            lambda = "hello_world";
+            method = "GET";
+            path = "/hello-world";
+          }
+          {
+            lambda = "resume";
+            method = "GET";
+            path = "/resume";
+          }
+        ];
+
+        static = let
+          extToMime = {
+            "js" = "text/javascript";
+            "css" = "text/css";
+          };
+
+          builtFiles = {
+            "style.css".source = toString css;
+            "style.css".content_type = extToMime.css;
+          };
+
+          staticFiles = lib.listToAttrs (map (name:
+            let
+              ext = lib.lists.findFirst (ext: lib.hasSuffix ext name) null
+                (builtins.attrNames extToMime);
+              source = toString ./static + "/" + name;
+            in {
+              inherit name;
+              value = if ext == null then {
+                inherit source;
+              } else {
+                inherit source;
+                content_type = extToMime.${ext};
+              };
+            }) (getFiles ./static));
+        in builtFiles // staticFiles;
 
         infrastructure = terranix.lib.terranixConfiguration {
           inherit system;
           modules = [
+            ./infra/api.nix
+            #./infra/cdn.nix
             ./infra/lambda.nix
+            ./infra/static.nix
             {
-              config = {
-                provider.aws = { region = "us-west-2"; };
-
-                app_name = "garrettdavis_dev";
-
-                lambdas = pkgs.lib.attrsets.concatMapAttrs (name: package: {
-                  ${name} = { source_dir = "${package}/bin"; };
-                }) lambdaPackages;
-              };
+              provider.aws = { region = "us-west-2"; };
+              inherit app_name endpoints lambdas static;
             }
           ];
         };
 
-      in rec {
-        packages = lambdaPackages // { default = infrastructure; };
+      in {
+        packages = lambdaPackages // {
+          inherit css infrastructure;
+          default = infrastructure;
+        };
 
         apps = {
           terraform = {
             type = "app";
-            program = builtins.toString (pkgs.writers.writeBash "apply" ''
+            program = toString (pkgs.writers.writeBash "apply" ''
               if [[ -e config.tf.json ]]; then rm -f config.tf.json; fi;
-              cp ${packages.default} config.tf.json \
+              cp ${infrastructure} config.tf.json \
               && ${pkgs.terraform}/bin/terraform init \
               && ${pkgs.terraform}/bin/terraform "$@"
             '');
@@ -114,9 +185,12 @@
             pkgs.cargo-outdated
             pkgs.cargo-release
             pkgs.cargo-watch
+            pkgs.rustfmt
 
             pkgs.terranix
             pkgs.terraform
+
+            pkgs.tailwindcss
           ];
           RUST_BACKTRACE = 1;
         };

@@ -13,6 +13,8 @@ aws lambda, api gateway and cloudfront.
 - [ ] Cloudfront
 - [ ] Static Files
 - [ ] SyncThing
+      To get SyncThing working, we might need an ec2 instance that will host a
+      SyncThing server to recieve all the data.
 
 ### Pages
 

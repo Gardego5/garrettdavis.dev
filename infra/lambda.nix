@@ -19,7 +19,7 @@
   config = rec {
     data.aws_iam_policy_document = (lib.attrsets.concatMapAttrs (name:
       { ... }: {
-        "${name}_asusme_role" = {
+        "${name}_assume_role" = {
           statement = {
             effect = "Allow";
             principals = {
@@ -51,7 +51,7 @@
         ${name} = {
           name = "${config.app_name}_${name}";
           assume_role_policy =
-            "\${data.aws_iam_policy_document.${name}_asusme_role.json}";
+            "\${data.aws_iam_policy_document.${name}_assume_role.json}";
           tags = { inherit (config) app_name; };
         };
       }) config.lambdas);
