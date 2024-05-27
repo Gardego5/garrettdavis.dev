@@ -131,7 +131,10 @@
             let
               ext = lib.lists.findFirst (ext: lib.hasSuffix ext name) null
                 (builtins.attrNames extToMime);
-              source = toString ./static + "/" + name;
+              source = toString (pkgs.stdenv.mkDerivation {
+                inherit name;
+                buildCommand = "cp ${./static}/${name} $out";
+              });
             in {
               inherit name;
               value = if ext == null then {
