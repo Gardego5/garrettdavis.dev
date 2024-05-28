@@ -1,13 +1,13 @@
 { config, lib, ... }: {
   options = with lib.types; {
     app_name = lib.mkOption { type = str; };
-
+    certificate_arn = lib.mkOption { type = str; };
   };
 
   config = let
     originLambda = "lambda-garrettdavis-dev";
     originS3 = "s3-garrettdavis-dev";
-  in rec {
+  in {
     resource.aws_cloudfront_origin_access_identity.origin_access_identity.comment =
       "garrettdavis.dev";
 
@@ -16,7 +16,7 @@
         {
           origin_id = originLambda;
           domain_name =
-            ''''${replace(aws_apigatewayv2_api.api.id, "https://", ""'';
+            "\${aws_apigatewayv2_api.api.id}.execute-api.us-west-2.amazonaws.com";
 
           custom_origin_config = {
             http_port = 80;
@@ -27,7 +27,8 @@
         }
 
         {
-          domain_name = "\${resource.aws_s3_bucket.static.s3_bucket_endpoint}";
+          domain_name =
+            "\${aws_s3_bucket_website_configuration.bucket.website_endpoint}";
           origin_id = originS3;
 
           custom_origin_config = {
@@ -46,7 +47,7 @@
       aliases = [ "garrettdavis.dev" "www.garrettdavis.dev" ];
 
       default_cache_behavior = {
-        target_origin_id = originS3;
+        target_origin_id = originLambda;
         allowed_methods =
           [ "POST" "HEAD" "PATCH" "DELETE" "PUT" "GET" "OPTIONS" ];
         cached_methods = [ "GET" "HEAD" ];
@@ -61,7 +62,7 @@
 
       ordered_cache_behavior = [{
         path_pattern = "/static/*";
-        target_origin_id = originLambda;
+        target_origin_id = originS3;
         allowed_methods = [ "GET" "HEAD" ];
         cached_methods = [ "GET" "HEAD" ];
         cache_policy_id =
@@ -77,7 +78,7 @@
       restrictions = { geo_restriction = { restriction_type = "none"; }; };
 
       viewer_certificate = {
-        acm_certificate_arn = module.zone.certificate_arn;
+        acm_certificate_arn = config.certificate_arn;
         ssl_support_method = "sni-only";
       };
 
@@ -98,7 +99,7 @@
 
     resource.aws_cloudfront_function.viewer_request = {
       name = "${config.app_name}_viewer_request";
-      runtime = "cloudfront-js-2.0";
+      runtime = "cloudfront-js-1.0";
       code = builtins.readFile ./viewer_request.js;
     };
 

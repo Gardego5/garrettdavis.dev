@@ -20,7 +20,9 @@
     };
   };
 
-  config = rec {
+  config = let
+    staticKey = key: "_${builtins.replaceStrings [ "/" "." ] [ "_" "_" ] key}";
+  in rec {
     resource.aws_s3_bucket.bucket = {
       bucket = "5571502d-0b3f-4d5e-a603-c255ca32d94c";
       tags = { inherit (config) app_name; };
@@ -84,11 +86,24 @@
 
     resource.aws_s3_object = (lib.attrsets.concatMapAttrs (key:
       { source, cache_control, content_type }: {
-        "_${builtins.replaceStrings [ "/" "." ] [ "_" "_" ] key}" = {
+        ${staticKey key} = {
           inherit (resource.aws_s3_bucket.bucket) bucket;
           inherit source cache_control content_type;
           key = "static/${key}";
           depends_on = [ "aws_s3_bucket.bucket" ];
+        };
+      }) config.static);
+
+    resource.null_resource = (lib.attrsets.concatMapAttrs (key:
+      { ... }: {
+        ${staticKey key} = {
+          lifecycle.replace_triggered_by = [ "aws_s3_object.${staticKey key}" ];
+          depends_on = [ "aws_s3_object.${staticKey key}" ];
+          provisioner."local-exec".command = ''
+            aws cloudfront create-invalidation \
+              --distribution-id ''${aws_cloudfront_distribution.garrettdavis_dev.id} \
+              --paths '/static/${key}'
+          '';
         };
       }) config.static);
   };

@@ -71,7 +71,7 @@
           type = "zip";
           inherit source_dir;
           output_path = "target/infra/${name}.zip";
-          output_file_mode = "644";
+          output_file_mode = "0777";
         };
       }) config.lambdas);
 
