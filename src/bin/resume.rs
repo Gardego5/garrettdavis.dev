@@ -214,7 +214,7 @@ async fn handler(
             }
         }
 
-        div class="grid grid-cols-[1fr_6fr] [&>*:nth-child(odd)]:text-right gap-4 print:text-black max-w-4xl" {
+        div class="grid grid-cols-[1fr_6fr] [&>*:nth-child(odd)]:text-right gap-4 print:text-black max-w-4xl m-auto" {
             div class="col-start-2 flex py-4 items-center" {
                 h1 {
                     span class="text-4xl font-mono" { "Garrett Davis" }
@@ -224,7 +224,7 @@ async fn handler(
             }
 
             div class="col-start-2" {
-                "I am a software engineer, with a passion for maintainable software, teaching, and learning new technologies."
+                "I am a software engineer, with a passion for maintainable software, teaching, and learning new technologies. "
             }
 
             @for section in sections { (section) }

@@ -2,7 +2,8 @@
 let
   http_methods = [ "ANY" "OPTIONS" "GET" "POST" "PUT" "PATCH" "DELETE" ];
   buildName = { lambda, method, path }:
-    (builtins.replaceStrings [ "/" ] [ "_" ] "${lambda}_${method}_${path}");
+    (builtins.replaceStrings [ "/" "$" ] [ "_" "-" ]
+      "${lambda}_${method}_${path}");
 in {
   options = with lib.types; {
     app_name = lib.mkOption { type = str; };

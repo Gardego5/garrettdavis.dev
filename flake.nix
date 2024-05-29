@@ -26,15 +26,7 @@
           inherit system;
           config.allowUnfree = true;
         };
-        lib = pkgs.lib;
-
-        getDir = dir:
-          builtins.mapAttrs (file: type:
-            if type == "directory" then getDir "${dir}/${file}" else type)
-          (builtins.readDir dir);
-        getFiles = dir:
-          lib.collect builtins.isString (lib.mapAttrsRecursive
-            (path: type: builtins.concatStringsSep "/" path) (getDir dir));
+        inherit (pkgs) lib;
 
         toolchain = with fenix.packages.${system};
           combine [
@@ -72,17 +64,6 @@
             strictDeps = true;
           });
 
-        css = pkgs.stdenv.mkDerivation {
-          name = "output.css";
-          buildCommand = let
-            config = ./tailwind.config.js;
-            input = ./src/input.css;
-          in ''
-            cp -r ${./src} ./src
-            ${pkgs.tailwindcss}/bin/tailwindcss -c ${config} -i ${input} -o $out --minify
-          '';
-        };
-
         lambdaBinNames = let
           isRustFile = name: dirEntryType:
             dirEntryType == "regular" && lib.hasSuffix ".rs" name;
@@ -104,9 +85,16 @@
         lambdas = {
           hello_world = { source_dir = toString lambdaPackages.hello_world; };
           resume = { source_dir = toString lambdaPackages.resume; };
+          index = { source_dir = toString lambdaPackages.index; };
+          contact = { source_dir = toString lambdaPackages.contact; };
         };
 
         endpoints = [
+          {
+            lambda = "contact";
+            method = "GET";
+            path = "/contact";
+          }
           {
             lambda = "hello_world";
             method = "GET";
@@ -117,63 +105,15 @@
             method = "GET";
             path = "/resume";
           }
+          {
+            lambda = "index";
+            method = "GET";
+            path = "/";
+          }
         ];
 
-        extToMime = {
-          "js" = "text/javascript";
-          "css" = "text/css";
-        };
-
-        static = {
-          "style.css".content_type = extToMime.css;
-          "style.css".source = toString css;
-          "3p/js/htmx.min.js".content_type = extToMime.js;
-          "3p/js/htmx.min.js".source = builtins.fetchurl {
-            url =
-              "https://github.com/bigskysoftware/htmx/releases/download/v1.9.12/htmx.min.js";
-            sha256 =
-              "sha256:0lm4lbsgjmgcmi6w54f7qjcs1hwmw68ljqfv22ar87l8wynig4s4";
-          };
-          "3p/js/alpinejs.min.js".content_type = extToMime.js;
-          "3p/js/alpinejs.min.js".source = builtins.fetchurl {
-            url =
-              "https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js";
-            sha256 =
-              "sha256:1llddh6qyip60nvyk0yzg2sdz6ydxlgfz23sglaxmyilcf88r61x";
-          };
-          "3p/js/alpinejs-morph.min.js".content_type = extToMime.js;
-          "3p/js/alpinejs-morph.min.js".source = builtins.fetchurl {
-            url =
-              "https://cdn.jsdelivr.net/npm/@alpinejs/morph@3.x.x/dist/cdn.min.js";
-            sha256 =
-              "sha256:08vm298my7c9ssbp1bxy66pkdl8dcd5a8nk9khvwxh2b49ykps4v";
-          };
-          "3p/js/iconify-icon.min.js".content_type = extToMime.js;
-          "3p/js/iconify-icon.min.js".source = builtins.fetchurl {
-            url =
-              "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js";
-            sha256 =
-              "sha256:00hgal6fhdwzk3njx1pyqyrwydny42hm82zbjzmzvjmhin1r93bm";
-          };
-        };
-
-        #staticFiles = lib.listToAttrs (map (name:
-        #  let
-        #    ext = lib.lists.findFirst (ext: lib.hasSuffix ext name) null
-        #      (builtins.attrNames extToMime);
-        #    source = toString (pkgs.stdenv.mkDerivation {
-        #      inherit name;
-        #      buildCommand = "cp ${./static}/${name} $out";
-        #    });
-        #  in {
-        #    inherit name;
-        #    value = if ext == null then {
-        #      inherit source;
-        #    } else {
-        #      inherit source;
-        #      content_type = extToMime.${ext};
-        #    };
-        #  }) (getFiles ./static));
+        inherit (import ./infra/static_files.nix { inherit pkgs lib; })
+          css static staticFilesDirectory;
 
         infrastructure = terranix.lib.terranixConfiguration {
           inherit system;
@@ -204,11 +144,11 @@
 
       in {
         packages = lambdaPackages // {
-          inherit css infrastructure;
+          inherit css infrastructure staticFilesDirectory;
           default = infrastructure;
         };
 
-        apps = {
+        apps = rec {
           terraform = {
             type = "app";
             program = toString (pkgs.writers.writeBash "terraform" ''
@@ -219,13 +159,22 @@
             '');
           };
 
+          local-refresh = {
+            type = "app";
+            program = toString (pkgs.writers.writeBash "local-refresh" ''
+              if [[ -e config.tf.json ]]; then rm -f config.tf.json; fi;
+              cp ${infrastructure} config.tf.json
+              ${pkgs.aws-sam-cli}/bin/sam build --hook-name terraform
+            '');
+          };
+
           local = {
             type = "app";
             program = toString (pkgs.writers.writeBash "local" ''
-              if [[ -e config.tf.json ]]; then rm -f config.tf.json; fi;
-              cp ${infrastructure} config.tf.json \
-              && ${pkgs.aws-sam-cli}/bin/sam build --hook-name terraform \
-              && ${pkgs.aws-sam-cli}/bin/sam local start-api
+              set -o pipefail
+              trap 'kill %1; kill %2' SIGINT
+              ${pkgs.aws-sam-cli}/bin/sam local start-api --warm-containers lazy & \
+              ${pkgs.simple-http-server}/bin/simple-http-server -p 3001 -- ${staticFilesDirectory}
             '');
           };
         };
