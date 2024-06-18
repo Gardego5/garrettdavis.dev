@@ -1,12 +1,8 @@
-use aws_lambda_events::{
-    apigw::{ApiGatewayV2httpRequest, ApiGatewayV2httpResponse},
-    encodings::Body,
-};
-use http::{header::CONTENT_TYPE, HeaderMap};
+use aws_lambda_events::apigw::{ApiGatewayV2httpRequest, ApiGatewayV2httpResponse};
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use maud::Render;
 
-use garrettdavis_dev_cargo_lambda::Base64Body;
+use garrettdavis_dev_cargo_lambda::{components::template::template, HtmlResponse};
 
 enum ItemDesc {
     P(&'static str),
@@ -74,7 +70,7 @@ impl Render for Section {
 async fn handler(
     _event: LambdaEvent<ApiGatewayV2httpRequest>,
 ) -> Result<ApiGatewayV2httpResponse, Error> {
-    let sections  = vec![
+    let sections = vec![
         Section {
             title: "Technical Skills",
             items: vec![
@@ -84,10 +80,11 @@ async fn handler(
                     desc: ItemDesc::Ul(vec![
                         "TypeScript",
                         "JavaScript",
+                        "Nix",
                         "Rust",
-                        "Shell",
-                        "Python",
                         "HCL",
+                        "Python",
+                        "Shell",
                         "PHP",
                         "Java"
                     ]),
@@ -113,19 +110,19 @@ async fn handler(
                 Item {
                     title: "Libraries",
                     subtitle: None,
-                    desc: ItemDesc::Ul(vec!["Express", "NextAuth", "Axum", "Zod", "esbuild"]),
+                    desc: ItemDesc::Ul(vec!["Express", "NextAuth", "TRPC", "Axum", "Zod", "esbuild"]),
                     annotation: None,
                 },
                 Item {
                     title: "Databases",
                     subtitle: None,
-                    desc: ItemDesc::Ul(vec!["DynamoDB", "IndexedDB", "SQLite", "PostgreSQL"]),
+                    desc: ItemDesc::Ul(vec!["MySQL", "DynamoDB", "SQLite", "PostgreSQL", "IndexedDB"]),
                     annotation: None
                 },
                 Item {
                     title: "CI/CD Tools",
                     subtitle: None,
-                    desc: ItemDesc::Ul(vec!["Terraform", "AWS CodeBuild", "AWS CodePipeline"]),
+                    desc: ItemDesc::Ul(vec!["Terraform", "AWS CodeBuild", "AWS CodePipeline", "GitHub Actions", "NixOS"]),
                     annotation: None
                 },
             ],
@@ -151,15 +148,23 @@ async fn handler(
             title: "Experience",
             items: vec![
                 Item {
+                    title: "University of Phoenix",
+                    subtitle: Some("Software Engineer I"),
+                    desc: ItemDesc::Ul(vec![
+                                       "Spearheaded transition from typescript to golang for backend microservices",
+                    ]),
+                    annotation: Some("10/23 - Present"),
+                },
+                Item {
                     title: "Cook Systems - University of Phoenix",
-                    subtitle: Some("Software Engineer"),
+                    subtitle: Some("Contract Software Engineer"),
                     desc: ItemDesc::Ul(vec![
                         "Revamped existing authentication flow built with PHP to integrate with NextAuth and custom Django / EdX authentication system.",
                         "I built automatically generated sitemap for marketing website.",
                         "I built a tool to programatically test lighthouse scores across entire marketing site.",
                         "I built a custom replacement for Terraform Cloud using s3 backend and codepipeline, reducing time to create a new project's cicd infrastrucure from roughly 8 hours down to only 15 - 30 minutes.",
                     ]),
-                    annotation: Some("10/22 - Present"),
+                    annotation: Some("10/22 - 10/23"),
                 },
                 Item {
                     title: "MSR-FSR",
@@ -231,21 +236,7 @@ async fn handler(
         }
     };
 
-    let page =
-        Base64Body(garrettdavis_dev_cargo_lambda::components::template::template(head, body));
-
-    Ok(ApiGatewayV2httpResponse {
-        body: Some(Body::Text(page.render().into())),
-        headers: {
-            let mut headers = HeaderMap::new();
-            headers.insert(CONTENT_TYPE, "text/html".parse()?);
-            headers
-        },
-        status_code: 200,
-        is_base64_encoded: true,
-        multi_value_headers: HeaderMap::new(),
-        cookies: vec![],
-    })
+    Ok(HtmlResponse::new(template(head, body)).into())
 }
 
 #[tokio::main]

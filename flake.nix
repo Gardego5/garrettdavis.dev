@@ -83,37 +83,25 @@
         }) lambdaBinNames);
 
         lambdas = {
-          hello_world = { source_dir = toString lambdaPackages.hello_world; };
+          blog = { source_dir = toString lambdaPackages.blog; };
+          contact = { source_dir = toString lambdaPackages.contact; };
+          notes = { source_dir = toString lambdaPackages.notes; };
           resume = { source_dir = toString lambdaPackages.resume; };
           index = { source_dir = toString lambdaPackages.index; };
-          contact = { source_dir = toString lambdaPackages.contact; };
         };
 
-        endpoints = [
-          {
-            lambda = "contact";
-            method = "GET";
-            path = "/contact";
-          }
-          {
-            lambda = "hello_world";
-            method = "GET";
-            path = "/hello-world";
-          }
-          {
-            lambda = "resume";
-            method = "GET";
-            path = "/resume";
-          }
-          {
-            lambda = "index";
-            method = "GET";
-            path = "/";
-          }
-        ];
+        endpoints = {
+          "GET /blog" = "blog";
+          "GET /contact" = "contact";
+          "POST /contact" = "contact";
+          "GET /notes" = "notes";
+          "GET /notes/{id+}" = "notes";
+          "GET /resume" = "resume";
+          "$default" = "index";
+        };
 
         inherit (import ./infra/static_files.nix { inherit pkgs lib; })
-          css static staticFilesDirectory;
+          css font static staticFilesDirectory;
 
         infrastructure = terranix.lib.terranixConfiguration {
           inherit system;
@@ -144,7 +132,7 @@
 
       in {
         packages = lambdaPackages // {
-          inherit css infrastructure staticFilesDirectory;
+          inherit css font infrastructure staticFilesDirectory;
           default = infrastructure;
         };
 
@@ -168,13 +156,23 @@
             '');
           };
 
-          local = {
+          local = let
+            caddyfile = pkgs.writers.writeText "Caddyfile" ''
+              http://localhost:8000
+
+              reverse_proxy localhost:3000
+
+              file_server /static/* {
+                root ${staticFilesDirectory}
+              }
+            '';
+          in {
             type = "app";
-            program = toString (pkgs.writers.writeBash "local" ''
+            program = toString (pkgs.writers.writeBash "devserver" ''
               set -o pipefail
               trap 'kill %1; kill %2' SIGINT
               ${pkgs.aws-sam-cli}/bin/sam local start-api --warm-containers lazy & \
-              ${pkgs.simple-http-server}/bin/simple-http-server -p 3001 -- ${staticFilesDirectory}
+              ${pkgs.caddy}/bin/caddy run --config ${caddyfile} --adapter caddyfile
             '');
           };
         };

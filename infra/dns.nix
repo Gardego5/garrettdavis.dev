@@ -49,7 +49,7 @@
 
     ses_mail_from_txt = {
       inherit (config) zone_id;
-      name = "{aws_ses_domain_mail_from.garrettdavis_dev.mail_from_domain}";
+      name = "\${aws_ses_domain_mail_from.garrettdavis_dev.mail_from_domain}";
       type = "TXT";
       ttl = 300;
       records = [ "v=spf1 include:amazonses.com ~all" ];

@@ -4,6 +4,9 @@ const plugin = require("tailwindcss/plugin");
 module.exports = {
   content: ["./src/**/*.rs"],
   theme: {
+    fontFamily: {
+      mono: ["Iosevka Garrett Davis Dev Web", "ui-monospace"],
+    },
     extend: {},
   },
   plugins: [
