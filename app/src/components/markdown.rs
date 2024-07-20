@@ -149,14 +149,11 @@ impl<T: AsRef<str>> Render for Markdown<T> {
 
 pub struct RawDocument<T>(pub T);
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum MarkdownWithFrontMatterError {
     FrontMatterMissing,
     FrontMatterInvalid(serde_json::error::Error),
 }
-
-unsafe impl Send for MarkdownWithFrontMatterError {}
-unsafe impl Sync for MarkdownWithFrontMatterError {}
 
 impl Display for MarkdownWithFrontMatterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

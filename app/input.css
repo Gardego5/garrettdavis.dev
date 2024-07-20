@@ -5,6 +5,6 @@
 @layer base {
   html,
   body {
-    font-family: "Iosevka Garrett Davis Dev Web", ui-monospace, monospace;
+    font-family: "Iosevka GarrettDavisDev Web", "ui-monospace";
   }
 }

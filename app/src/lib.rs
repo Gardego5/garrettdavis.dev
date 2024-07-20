@@ -6,6 +6,7 @@ use http::{header::CONTENT_TYPE, HeaderMap, HeaderValue};
 use maud::Render;
 
 pub mod components;
+pub mod pages;
 
 pub struct HtmlResponse(ApiGatewayV2httpResponse);
 

@@ -2,10 +2,10 @@ const plugin = require("tailwindcss/plugin");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./src/**/*.rs"],
+  content: [`./src/**/*.rs`],
   theme: {
     fontFamily: {
-      mono: ["Iosevka Garrett Davis Dev Web", "ui-monospace"],
+      mono: ["Iosevka GarrettDavisDev Web", "ui-monospace"],
     },
     extend: {},
   },

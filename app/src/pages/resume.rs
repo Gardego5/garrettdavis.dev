@@ -1,8 +1,7 @@
-use aws_lambda_events::apigw::{ApiGatewayV2httpRequest, ApiGatewayV2httpResponse};
-use lambda_runtime::{service_fn, Error, LambdaEvent};
-use maud::Render;
+use axum::response::IntoResponse;
+use maud::{html, Render};
 
-use garrettdavis_dev_cargo_lambda::{components::template::template, HtmlResponse};
+use crate::components::{error::Result, template::template};
 
 enum ItemDesc {
     P(&'static str),
@@ -67,9 +66,7 @@ impl Render for Section {
     }
 }
 
-async fn handler(
-    _event: LambdaEvent<ApiGatewayV2httpRequest>,
-) -> Result<ApiGatewayV2httpResponse, Error> {
+pub async fn handler() -> Result<impl IntoResponse> {
     let sections = vec![
         Section {
             title: "Technical Skills",
@@ -207,45 +204,33 @@ async fn handler(
         },
     ];
 
-    let head = maud::html! {
-        title { "Resume - Garrett Davis" }
-        meta name="description" content="Garrett Davis' resume";
-    };
-
-    let body = maud::html! {
-        div class="fixed top-0 right-0 flex gap-2 p-2 print:hidden" {
-            button x-data x-on:click="window.print()" title="Print this page." {
-                iconify-icon icon="ph:printer" width="36" height="36" {}
-            }
-        }
-
-        div class="grid grid-cols-[1fr_6fr] [&>*:nth-child(odd)]:text-right gap-4 print:text-black max-w-4xl m-auto" {
-            div class="col-start-2 flex py-4 items-center" {
-                h1 {
-                    span class="text-4xl font-mono" { "Garrett Davis" }
-                    br;
-                    span class="text-lg" { "Resume" }
+    Ok(template(
+        html! {
+            title { "Resume - Garrett Davis" }
+            meta name="description" content="Garrett Davis' resume";
+        },
+        html! {
+            div class="fixed top-0 right-0 flex gap-2 p-2 print:hidden" {
+                button x-data x-on:click="window.print()" title="Print this page." {
+                    iconify-icon icon="ph:printer" width="36" height="36" {}
                 }
             }
 
-            div class="col-start-2" {
-                "I am a software engineer, with a passion for maintainable software, teaching, and learning new technologies. "
+            div class="grid grid-cols-[1fr_6fr] [&>*:nth-child(odd)]:text-right gap-4 print:text-black max-w-4xl m-auto" {
+                div class="col-start-2 flex py-4 items-center" {
+                    h1 {
+                        span class="text-4xl font-mono" { "Garrett Davis" }
+                        br;
+                        span class="text-lg" { "Resume" }
+                    }
+                }
+
+                div class="col-start-2" {
+                    "I am a software engineer, with a passion for maintainable software, teaching, and learning new technologies. "
+                }
+
+                @for section in sections { (section) }
             }
-
-            @for section in sections { (section) }
-        }
-    };
-
-    Ok(HtmlResponse::new(template(head, body)).into())
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_target(false)
-        .without_time()
-        .init();
-
-    lambda_runtime::run(service_fn(handler)).await
+        },
+    ))
 }

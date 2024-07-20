@@ -1,26 +1,14 @@
-use aws_lambda_events::apigw::{ApiGatewayV2httpRequest, ApiGatewayV2httpResponse};
-use http::Method;
-use lambda_runtime::{service_fn, Error, LambdaEvent};
+use axum::response::IntoResponse;
 use maud::html;
 
-use garrettdavis_dev_cargo_lambda::{
-    components::{
-        layout::{header, margins},
-        template::template,
-    },
-    HtmlResponse,
+use crate::components::{
+    layout::{header, margins},
+    template::template,
 };
 
-async fn handler(
-    event: LambdaEvent<ApiGatewayV2httpRequest>,
-) -> Result<ApiGatewayV2httpResponse, Error> {
-    if event.payload.request_context.http.method != Method::GET {
-        let mut resp = HtmlResponse::new(template(html! {}, html! { "Method Not Allowed" }));
-        *resp.status_mut() = 405;
-        return Ok(resp.into());
-    }
-
-    let page = template(
+pub async fn handler() -> impl IntoResponse {
+    println!("hello index");
+    template(
         html! {
             meta name="description" content="Garrett Davis is a young software developer who cares deaply about creating great software for people.";
             title { "Garrett Davis" }
@@ -71,18 +59,5 @@ async fn handler(
                 }
             }))
         },
-    );
-
-    Ok(HtmlResponse::new(page).into())
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_target(false)
-        .without_time()
-        .init();
-
-    lambda_runtime::run(service_fn(handler)).await
+    )
 }
