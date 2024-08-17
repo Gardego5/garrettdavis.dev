@@ -1,7 +1,7 @@
 use maud::{html, Markup, Render};
 
 pub fn margins<T: Render>(content: T) -> Markup {
-    html! { main ."p-4".m-auto."max-w-3xl" { (content) } }
+    html! { main ."p-4 m-auto max-w-3xl" { (content) } }
 }
 
 pub fn header(title: &str) -> Markup {

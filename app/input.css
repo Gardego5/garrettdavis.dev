@@ -7,4 +7,106 @@
   body {
     font-family: "Iosevka GarrettDavisDev Web", "ui-monospace";
   }
+
+  .markdown {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin-left: -0.5em;
+    }
+
+    h1 {
+      font-size: theme("fontSize.4xl");
+      line-height: theme("lineHeight.10");
+    }
+
+    h2 {
+      font-size: theme("fontSize.3xl");
+      line-height: theme("lineHeight.9");
+    }
+
+    h3 {
+      font-size: theme("fontSize.2xl");
+      line-height: theme("lineHeight.8");
+    }
+
+    h4 {
+      font-size: theme("fontSize.xl");
+      line-height: theme("lineHeight.7");
+    }
+
+    h5 {
+      font-size: theme("fontSize.lg");
+      line-height: theme("lineHeight.7");
+    }
+
+    p {
+      margin-block: theme("margin.4");
+    }
+
+    line-height: theme("lineHeight.7");
+  }
+
+  .slide {
+    h1 {
+      font-size: theme("fontSize.9xl");
+    }
+
+    h2 {
+      font-size: theme("fontSize.8xl");
+    }
+
+    h3 {
+      font-size: theme("fontSize.7xl");
+    }
+
+    h4 {
+      font-size: theme("fontSize.6xl");
+    }
+
+    h5 {
+      font-size: theme("fontSize.5xl");
+    }
+
+    font-size: theme("fontSize.3xl");
+  }
+
+  .markdown,
+  .slide {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin-block: theme("margin.4");
+      font-weight: theme("fontWeight.semibold");
+      alignitems: baseline;
+      gap: 0.15em;
+      position: relative;
+      display: flex;
+      a {
+        display: inline-block;
+        color: theme("colors.blue.600");
+        :hover {
+          color: theme("colors.blue.600");
+        }
+        scale: 0.8;
+      }
+    }
+
+    li {
+      list-style-type: disc;
+      list-style-position: outside;
+      margin-left: theme("margin.6");
+    }
+
+    hr {
+      margin-inline: theme("margin.6");
+      border-top: 1px solid theme("borderColor.slate.500");
+    }
+  }
 }

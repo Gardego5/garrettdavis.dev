@@ -15,7 +15,7 @@
   outputs = { nixpkgs, naersk, fenix, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        name = "garrettdavis.dev";
+        name = "garrettdavis-dev";
         src = ./app;
 
         pkgs = import nixpkgs {
@@ -44,12 +44,21 @@
         css = pkgs.stdenv.mkDerivation {
           inherit src;
           name = "style.css";
-          phases = [ "buildCommand" ];
+          #phases = [ "buildCommand" ];
           buildCommand = ''
-            cd $src
             ${pkgs.tailwindcss}/bin/tailwindcss \
               -c $src/tailwind.config.js \
-              -i $src/input.css -o $out --minify
+              -i $src/input.css -o $out/share/css/style.css --minify
+          '';
+        };
+
+        static = pkgs.stdenv.mkDerivation {
+          src = ./.;
+          name = "static";
+          phases = [ "buildCommand" ];
+          buildCommand = ''
+            mkdir -p $out/share
+            cp -r $src/static/* $out/share
           '';
         };
 
@@ -111,31 +120,20 @@
           '';
         };
 
-        staticDir = pkgs.stdenv.mkDerivation {
-          name = "bundle";
-          phases = [ "installPhase" ];
-          installPhase = ''
-            # copy in static folder
-            mkdir -p $out
-            cp -r ${./static}/* $out
-            chmod +w -R $out # permit adding new files
-
-            # copy additional built files
-            cp ${css} $out/style.css
-            mkdir -p $out/3p/font
-            cp -r ${font}/share/fonts/truetype/* $out/3p/font
-          '';
+        staticDir = pkgs.symlinkJoin {
+          name = "staticDir";
+          paths = [ css font static ];
         };
 
-        dockerImage = pkgs.dockerTools.buildImage {
-          inherit name;
+        dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "registry.fly.io/${name}";
           tag = "latest";
           created = "now";
-          copyToRoot = [ pkgs.curl ];
+          contents = [ pkgs.curl ];
           config = {
             Expose = 3000;
             Cmd = [ "${app}/bin/garrettdavis-dev" ];
-            Env = [ "STATIC_DIR=${staticDir}" ];
+            Env = [ "DATA_DIR=${./data}" "STATIC_DIR=${staticDir}/share" ];
           };
         };
 
@@ -143,20 +141,19 @@
         packages = { inherit app css dockerImage font staticDir; };
 
         devShells.default = pkgs.mkShell {
-          packages = [
-            toolchain
-            fenix.packages.${system}.rust-analyzer
-
-            pkgs.cargo-outdated
-            pkgs.cargo-release
-            pkgs.cargo-watch
-            pkgs.rustfmt
-
-            pkgs.terraform
-            pkgs.tailwindcss
-          ];
+          packages = [ toolchain fenix.packages.${system}.rust-analyzer ]
+            ++ (with pkgs; [
+              cargo-outdated
+              cargo-release
+              cargo-watch
+              rustfmt
+              terraform
+              tailwindcss
+              flyctl
+              just
+              watchexec
+            ]);
           RUST_BACKTRACE = 1;
-          STATIC_DIR = toString staticDir;
         };
       });
 }

@@ -1,4 +1,6 @@
-use http::StatusCode;
+use maud::html;
+
+use crate::components::layout::{header, margins};
 
 use super::template::template;
 
@@ -7,14 +9,19 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct Error {
     status: axum::http::StatusCode,
     inner: Option<anyhow::Error>,
+    message: Option<maud::Markup>,
 }
 
 impl Error {
-    pub fn with_status<E: Into<anyhow::Error>>(status: axum::http::StatusCode, err: E) -> Self {
+    pub fn with_message(self, message: maud::Markup) -> Self {
         Self {
-            status,
-            inner: Some(err.into()),
+            message: Some(message),
+            ..self
         }
+    }
+
+    pub fn with_status(self, status: axum::http::StatusCode) -> Self {
+        Self { status, ..self }
     }
 }
 
@@ -23,6 +30,7 @@ impl Default for Error {
         Self {
             status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             inner: None,
+            message: Some(html!(p { "An unknown error has occured." })),
         }
     }
 }
@@ -33,28 +41,34 @@ where
 {
     fn from(value: E) -> Self {
         Self {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
             inner: Some(value.into()),
+            ..Default::default()
         }
     }
 }
 
 impl axum::response::IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        (
-            self.status,
-            template(
-                maud::html! {},
-                maud::html! {
-                    main {
-                        h1 { "An error has occurred" }
-                        @if let Some(err) = self.inner {
-                            p { (err) }
-                        }
+        let head = html!();
+        let body = html! {
+            (header("Error"))
+
+            (margins(html! {
+                img class="m-auto w-[75%] rounded-full" alt="latte with orchid"
+                    src="/static/image/coffee_flower.jpg" {}
+
+                div class="mt-4" {
+                    @if let Some(msg) = self.message {
+                        (msg)
+                    } @else if let Some(err) = self.inner {
+                        p { (err) }
+                    } @else {
+                        p { "An unknown error occurred." }
                     }
-                },
-            ),
-        )
-            .into_response()
+                }
+            }))
+        };
+
+        (self.status, template(head, body)).into_response()
     }
 }

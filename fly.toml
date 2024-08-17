@@ -1,0 +1,21 @@
+# fly.toml app configuration file generated for garrettdavis-dev on 2024-07-31T07:22:19Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'garrettdavis-dev'
+primary_region = 'sea'
+
+[build]
+image = "registry.fly.io/garrettdavis-dev:latest"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+processes = ['app']
+
+[[vm]]
+size = 'shared-cpu-1x'

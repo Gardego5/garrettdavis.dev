@@ -7,7 +7,6 @@ use crate::components::{
 };
 
 pub async fn handler() -> impl IntoResponse {
-    println!("hello index");
     template(
         html! {
             meta name="description" content="Garrett Davis is a young software developer who cares deaply about creating great software for people.";

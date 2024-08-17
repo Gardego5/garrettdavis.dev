@@ -1,22 +1,26 @@
-use anyhow::Result;
 use axum::{
     routing::{get, post},
     Router,
 };
-use garrettdavis_dev::pages;
+use state::traits::TryFromEnv;
 use tower_http::{compression::CompressionLayer, services::ServeDir};
 
-const VAR_PORT: &'static str = "PORT";
-const VAR_HOST: &'static str = "HOST";
-const VAR_STATIC_DIR: &'static str = "STATIC_DIR";
+mod components;
+mod pages;
+mod state;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
+    let state = state::AppState::try_from_env()?;
+
     let compression_layer = CompressionLayer::new()
         .br(true)
         .deflate(true)
         .gzip(true)
         .zstd(true);
+
+    let listener =
+        tokio::net::TcpListener::bind((state.config.host.clone(), state.config.port)).await?;
 
     let app = Router::new()
         .route("/", get(pages::index::handler))
@@ -25,16 +29,13 @@ async fn main() -> Result<()> {
         .route("/contact", post(pages::contact::handle_post))
         .route("/resume", get(pages::resume::handler))
         .route("/notes", get(pages::notes::handler))
-        .nest_service("/static", ServeDir::new(std::env::var(VAR_STATIC_DIR)?))
-        .layer(compression_layer);
-
-    let listener = tokio::net::TcpListener::bind((
-        std::env::var(VAR_HOST).unwrap_or("0.0.0.0".into()),
-        std::env::var(VAR_PORT)
-            .unwrap_or("3000".into())
-            .parse::<u16>()?,
-    ))
-    .await?;
+        .route(
+            "/presentation/:presentation",
+            get(pages::presentations::handler),
+        )
+        .nest_service("/static", ServeDir::new(state.config.static_dir.clone()))
+        .layer(compression_layer)
+        .with_state(state);
 
     Ok(axum::serve(listener, app).await?)
 }

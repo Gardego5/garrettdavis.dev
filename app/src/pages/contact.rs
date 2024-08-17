@@ -103,7 +103,7 @@ pub async fn handle_post(
     Ok((
         jar.add(
             serde_html_form::to_string(&body.0)
-                .map_err(|err| Error::with_status(StatusCode::INTERNAL_SERVER_ERROR, err))?,
+                .map_err(|err| Error::from(err).with_status(StatusCode::INTERNAL_SERVER_ERROR))?,
         ),
         if headers
             .get("hx-request")
