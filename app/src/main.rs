@@ -1,3 +1,6 @@
+#![feature(associated_type_defaults)]
+#![feature(if_let_guard)]
+
 use axum::{
     routing::{get, post},
     Router,
@@ -24,7 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/", get(pages::index::handler))
-        .route("/blog", get(pages::blog::handler))
+        .route("/blog", get(pages::blog::handle_get))
+        .route("/blog/:slug", get(pages::blog::handle_get_slug))
         .route("/contact", get(pages::contact::handle_get))
         .route("/contact", post(pages::contact::handle_post))
         .route("/resume", get(pages::resume::handler))

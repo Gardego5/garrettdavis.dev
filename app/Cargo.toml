@@ -16,8 +16,10 @@ ammonia = "4.0.0"
 anyhow = "1.0.86"
 axum = { version = "0.7.5", features = ["macros"] }
 axum-extra = { version = "0.9.3", features = ["cookie", "typed-header"] }
+chrono = { version = "0.4.38", features = ["serde"] }
 gray_matter = "0.2.8"
 http = "1.1.0"
+inkjet = { version = "0.10.5", features = ["language-rust", "language-nix", "language-sql", "language-python", "language-html", "language-javascript", "language-jsx", "language-typescript", "language-tsx", "language-c", "html", "theme", "language-plaintext"], default-features = false }
 maud = { version = "0.26.0", features = ["axum"] }
 pulldown-cmark = "0.11.0"
 serde = { version = "1.0.202", features = ["derive"] }

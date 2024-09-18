@@ -1,7 +1,7 @@
 use maud::{html, Render};
 use serde::Deserialize;
 
-use super::markdown::MarkdownWithFrontMatter;
+use super::markdown::{Document, Frontmatter};
 
 #[derive(Debug, Deserialize)]
 pub struct NoteFrontMatter {
@@ -10,17 +10,23 @@ pub struct NoteFrontMatter {
     pub date: time::OffsetDateTime,
 }
 
-pub type Note = MarkdownWithFrontMatter<NoteFrontMatter>;
+impl Frontmatter for NoteFrontMatter {
+    fn prefix() -> String {
+        "note".into()
+    }
+}
+
+pub type Note = Document<NoteFrontMatter>;
 
 impl Render for Note {
     fn render(&self) -> maud::Markup {
         html! { section class="relative grid gap-2 p-6 bg-zinc-950 after:content-[''] after:absolute after:-z-10 after:-inset-[1px] after:bg-[linear-gradient(135deg,theme(colors.slate.500)_20px,transparent_20px,transparent_calc(100%-20px),theme(colors.slate.500)_calc(100%-20px))]" {
             div class="flex justify-between items-center" {
-                h2 class="text-xl text-bold" { (self.matter.title) }
-                span class="italic text-sm" { (self.matter.date) }
+                h2 class="text-xl text-bold" { (self.metadata.title) }
+                span class="italic text-sm" { (self.metadata.date) }
             }
 
-            div class="markdown" { (self.markup) }
+            div class="markdown" { (self.md()) }
         } }
     }
 }

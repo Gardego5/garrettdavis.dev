@@ -152,6 +152,7 @@
               flyctl
               just
               watchexec
+              kubectl
             ]);
           RUST_BACKTRACE = 1;
         };

@@ -3,8 +3,7 @@ use maud::html;
 
 use crate::components::{
     error::Result,
-    layout::{header, margins},
-    markdown::RawDocument,
+    layout::{margins, Header},
     notes::Note,
     template::template,
 };
@@ -24,12 +23,12 @@ Hopefully, we will even have a bit of formatting.
 "#;
 
 pub async fn handler() -> Result<impl IntoResponse> {
-    let note: Note = RawDocument(DATA).try_into()?;
+    let note: Note = DATA.parse()?;
 
     Ok(template(
         html! { title { "Garrett Davis" } },
         html! {
-            (header("Garrett Davis"))
+            (Header::Floating(None))
             (margins(html! {
                 main {
                     (note)

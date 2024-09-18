@@ -1,11 +1,12 @@
 use maud::html;
 
-use crate::components::layout::{header, margins};
+use crate::components::layout::{margins, Header};
 
 use super::template::template;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Debug)]
 pub struct Error {
     status: axum::http::StatusCode,
     inner: Option<anyhow::Error>,
@@ -41,8 +42,9 @@ where
 {
     fn from(value: E) -> Self {
         Self {
+            status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             inner: Some(value.into()),
-            ..Default::default()
+            message: None,
         }
     }
 }
@@ -51,7 +53,7 @@ impl axum::response::IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let head = html!();
         let body = html! {
-            (header("Error"))
+            (Header::Floating("Error".into()))
 
             (margins(html! {
                 img class="m-auto w-[75%] rounded-full" alt="latte with orchid"

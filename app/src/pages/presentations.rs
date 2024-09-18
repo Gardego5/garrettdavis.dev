@@ -1,6 +1,5 @@
 use std::io;
 
-use anyhow::anyhow;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -12,11 +11,10 @@ use tailwind_fuse::tw_merge;
 
 use crate::components::{
     error::{Error, Result},
-    markdown::{MarkdownWithFrontMatter, RawDocument},
+    layout::{margins, Header},
+    markdown::{Document, Frontmatter, NestedDocument},
     template::template,
 };
-
-const DELIMITER: &'static str = "===slide===\n";
 
 pub async fn handler(
     State(config): State<std::sync::Arc<crate::state::config::State>>,
@@ -32,13 +30,7 @@ pub async fn handler(
         _ => Error::from(err),
     })?;
 
-    let slides = str
-        .split(DELIMITER)
-        .map(RawDocument)
-        .map(Slide::try_from)
-        .collect::<std::result::Result<Vec<_>, _>>()?;
-
-    let slides_length = slides.len();
+    let pres: NestedDocument<Presentation, Slide> = str.parse()?;
 
     Ok(template(
         html!(
@@ -47,6 +39,52 @@ pub async fn handler(
             script { (PreEscaped(include_str!("./presentations.rs.js"))) }
             title { }
         ),
+        pres,
+    ))
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
+#[serde(tag = "layout")]
+enum Slide {
+    #[default]
+    Default,
+    Centered,
+}
+
+impl Frontmatter for Slide {
+    fn prefix() -> String {
+        "slide".into()
+    }
+}
+
+impl Render for Document<Slide> {
+    fn render(&self) -> maud::Markup {
+        static CLASS: &'static str = "p-20 inset-4 absolute border border-slate-500 slide grid grid-rows-[auto_minmax(0,1fr)] gap-16";
+        let layout_class = match self.metadata {
+            Slide::Centered => "justify-center items-center text-center",
+            _ => "",
+        };
+
+        let content = match self.metadata {
+            _ => html!(div class="grid gap-8" { (self.md()) }),
+        };
+
+        html!(div class=(tw_merge!(CLASS, layout_class)) { (content) })
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Presentation {}
+impl Frontmatter for Presentation {
+    fn prefix() -> String {
+        "presentation".into()
+    }
+}
+
+impl Render for NestedDocument<Presentation, Slide> {
+    fn render(&self) -> maud::Markup {
+        let slides_length = self.children.len();
+
         html!(main
             x-data={"{"
                 "slide:0,"
@@ -54,17 +92,32 @@ pub async fn handler(
                 "modal:false,"
                 "max:" (slides_length) ","
                 "increment() { this.slide < this.max && this.slide++ },"
-                "decrement() { this.slide > 0 && this.slide-- },"
+                "decrement() { this.slide > 1 && this.slide-- },"
             "}"}
+
+            // hotkeys
             "@keydown.arrow-down.window.prevent"="increment"
             "@keydown.arrow-up.window.prevent"="decrement"
+            "@keydown.space.window.prevent"="increment"
+            "@keydown.home.window.prevent"="slide=1"
+            "@keydown.end.window.prevent"={"slide=" (slides_length)}
+
             x-effect="window.document.getElementById(slide.toString())?.scrollIntoView()" {
 
-            @for (idx, slide) in slides.into_iter().enumerate() {
-                div #(idx+1) class="relative h-screen" {
+            div class="transition-all delay-500 duration-1000" style="min-height: 60vh;" x-init="$el.style.minHeight = '100vh'" {
+                (Header::Static(None))
+
+                (margins(html!(header class="markdown" {
+                    (self.md())
+                })))
+            }
+
+            @for (idx, slide) in self.children.iter().enumerate() {
+                section #(idx+1) class="relative h-screen" {
                     (slide)
 
-                    button class="absolute top-8 left-8 text-xs italic p-1" "@click"="$refs.modal.showModal()" {
+                    button class="absolute top-8 left-8 text-slate-500 text-xs italic p-1"
+                        "@click"="$refs.modal.showModal()" {
                         (idx+1) "/" (slides_length)
                     }
 
@@ -93,46 +146,6 @@ pub async fn handler(
                             "|| $event.preventDefault()"}
                         autofocus type="text" x-model="slide" {}
                 }
-            }
-        }),
-    ))
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
-enum SlideLayout {
-    #[default]
-    Default,
-    Centered,
-}
-
-impl SlideLayout {
-    fn class(&self) -> &'static str {
-        match self {
-            Self::Default => "",
-            Self::Centered => "justify-center items-center text-center",
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct SlideMetadata {
-    title: String,
-    layout: Option<SlideLayout>,
-}
-type Slide = MarkdownWithFrontMatter<SlideMetadata>;
-
-impl Render for Slide {
-    fn render(&self) -> maud::Markup {
-        let class = tw_merge!(
-            "p-20 inset-4 absolute border border-slate-500 slide grid grid-rows-[auto_minmax(0,1fr)] gap-16",
-            self.matter.layout.unwrap_or_default().class()
-        );
-
-        html!(section class=(class) {
-            h2 { (self.matter.title) }
-
-            div class="grid gap-8" {
-                (self.markup)
             }
         })
     }

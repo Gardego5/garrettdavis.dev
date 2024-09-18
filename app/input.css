@@ -8,13 +8,13 @@
     font-family: "Iosevka GarrettDavisDev Web", "ui-monospace";
   }
 
+  hr {
+    margin-block: theme("margin.4");
+    border-top: 1px solid theme("borderColor.slate.500");
+  }
+
   .markdown {
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
+    :is(h1, h2, h3, h4, h5, h6) {
       margin-left: -0.5em;
     }
 
@@ -52,23 +52,23 @@
 
   .slide {
     h1 {
-      font-size: theme("fontSize.9xl");
-    }
-
-    h2 {
-      font-size: theme("fontSize.8xl");
-    }
-
-    h3 {
       font-size: theme("fontSize.7xl");
     }
 
-    h4 {
+    h2 {
       font-size: theme("fontSize.6xl");
     }
 
-    h5 {
+    h3 {
       font-size: theme("fontSize.5xl");
+    }
+
+    h4 {
+      font-size: theme("fontSize.4xl");
+    }
+
+    h5 {
+      font-size: theme("fontSize.3xl");
     }
 
     font-size: theme("fontSize.3xl");
@@ -76,12 +76,19 @@
 
   .markdown,
   .slide {
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
+    a:not(:is(h1, h2, h3, h4, h5, h6) a) {
+      &:link {
+        text-decoration: solid underline theme("colors.yellow.100") 3px;
+      }
+      &:visited {
+        text-decoration-color: theme("colors.violet.200");
+      }
+      &:active {
+        text-underline-offset: 2px;
+      }
+    }
+
+    :is(h1, h2, h3, h4, h5, h6) {
       margin-block: theme("margin.4");
       font-weight: theme("fontWeight.semibold");
       alignitems: baseline;
@@ -90,9 +97,15 @@
       display: flex;
       a {
         display: inline-block;
-        color: theme("colors.blue.600");
-        :hover {
-          color: theme("colors.blue.600");
+        text-decoration: none;
+        &:link {
+          color: theme("colors.yellow.100");
+        }
+        &:visited {
+          color: theme("colors.violet.200");
+        }
+        &:active {
+          transform: translate(0, 2px);
         }
         scale: 0.8;
       }
@@ -104,9 +117,86 @@
       margin-left: theme("margin.6");
     }
 
-    hr {
-      margin-inline: theme("margin.6");
-      border-top: 1px solid theme("borderColor.slate.500");
+    code[class*="language-"],
+    pre[class*="language-"] {
+      color: #fafafa;
+      background: 0 0;
+      font-family: "Iosevka GarrettDavisDev Web", monospace;
+      font-size: 1em;
+      text-align: left;
+      white-space: pre;
+      word-spacing: normal;
+      word-break: normal;
+      word-wrap: normal;
+      line-height: 1.5;
+      -moz-tab-size: 4;
+      -o-tab-size: 4;
+      tab-size: 4;
+      -webkit-hyphens: none;
+      -moz-hyphens: none;
+      -ms-hyphens: none;
+      hyphens: none;
+
+      .comment {
+        font-style: italic;
+        color: #64748b;
+      }
+      .punctuation {
+        color: #ffffff;
+      }
+      .namespace,
+      .tag {
+        color: #e2e042;
+      }
+      .function-name {
+        color: #5080cd;
+      }
+      .function,
+      .numeric,
+      .type,
+      .constructor {
+        color: #d45823;
+      }
+      .class,
+      .constant,
+      .property {
+        color: #e2e042;
+      }
+      .builtin,
+      .keyword,
+      .selector {
+        color: #cc99cd;
+      }
+      .attr-value,
+      .char,
+      .regex,
+      .string,
+      .variable {
+        color: #618c4a;
+      }
+      .entity,
+      .operator,
+      .url {
+        color: #67cdcc;
+      }
+      .control {
+        font-style: italic;
+      }
+    }
+    pre {
+      padding: 1em;
+      margin: 0.5em 0;
+      overflow: auto;
+    }
+    :not(pre) > code[class*="language-"],
+    pre {
+      background: #09090b;
+      border-radius: 0.25rem;
+    }
+    :not(pre) > code[class*="language-"] {
+      padding: 0.1em;
+      border-radius: 0.3em;
+      white-space: normal;
     }
   }
 }
