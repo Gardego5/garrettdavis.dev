@@ -19,7 +19,7 @@ jobs:
       - name: Cachix
         uses: cachix/cachix-action@v14
         with:
-          name: garrettdavis-dev
+          name: gardego5
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Nix Shell
         uses: rrbutani/use-nix-shell-action@v1
