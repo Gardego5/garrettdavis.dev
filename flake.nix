@@ -90,7 +90,7 @@
             rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
           '';
           inherit src;
-          vendorHash = "sha256-brMqDJtTjw199c7AD2TcDrwmOj8TddvDX7JTMpG67WA=";
+          vendorHash = "sha256-fuyTpQ9n9Idr5vk8dakEXmgOrzO+cnq3RiLVftnHNwQ=";
           tags = [ "fonts" "static" ];
         };
 
