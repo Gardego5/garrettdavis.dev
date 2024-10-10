@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    font-family: "Iosevka GarrettDavisDev Web", "ui-monospace";
+  }
+
+  hr {
+    margin-block: theme("margin.4");
+    border-top: 1px solid theme("borderColor.slate.500");
+  }
+
+  .markdown {
+    h1 {
+      font-size: theme("fontSize.4xl");
+      line-height: theme("lineHeight.10");
+    }
+
+    h2 {
+      font-size: theme("fontSize.3xl");
+      line-height: theme("lineHeight.9");
+    }
+
+    h3 {
+      font-size: theme("fontSize.2xl");
+      line-height: theme("lineHeight.8");
+    }
+
+    h4 {
+      font-size: theme("fontSize.xl");
+      line-height: theme("lineHeight.7");
+    }
+
+    h5 {
+      font-size: theme("fontSize.lg");
+      line-height: theme("lineHeight.7");
+    }
+
+    p {
+      margin-block: theme("margin.4");
+    }
+
+    line-height: theme("lineHeight.7");
+  }
+
+  .presentation {
+    & main {
+      display: grid;
+      gap: 5rem;
+
+      & h1 {
+        font-size: theme("fontSize.7xl");
+      }
+
+      & h2 {
+        font-size: theme("fontSize.6xl");
+      }
+
+      & h3 {
+        font-size: theme("fontSize.5xl");
+      }
+
+      & h4 {
+        font-size: theme("fontSize.4xl");
+      }
+
+      & h5 {
+        font-size: theme("fontSize.3xl");
+      }
+
+      font-size: theme("fontSize.3xl");
+
+      & section {
+        height: calc(100vh - 5rem);
+        width: calc(100vw - 5rem);
+        border: 1px solid theme("borderColor.slate.500");
+        margin-inline: auto;
+        position: relative;
+      }
+    }
+  }
+
+  .markdown,
+  .presentation {
+    a:not(.lnlinks) {
+      &:link {
+        text-decoration: solid underline theme("colors.yellow.100");
+        text-decoration-thickness: 3px;
+      }
+      &:visited {
+        text-decoration-color: theme("colors.violet.200");
+      }
+      &:active {
+        text-underline-offset: 2px;
+      }
+    }
+
+    code:not(:is(.chroma *, .chroma)) {
+      background-color: theme("colors.zinc.950");
+      border-radius: 0.25rem;
+    }
+
+    :is(h1, h2, h3, h4, h5, h6) {
+      margin-block: theme("margin.4");
+      font-weight: theme("fontWeight.semibold");
+      alignitems: baseline;
+      gap: 0.15em;
+      position: relative;
+      display: flex;
+      a {
+        display: inline-block;
+        text-decoration: none;
+        &:link {
+          color: theme("colors.yellow.100");
+        }
+        &:visited {
+          color: theme("colors.violet.200");
+        }
+        &:active {
+          transform: translate(0, 2px);
+        }
+        scale: 0.8;
+      }
+    }
+
+    li {
+      list-style-type: disc;
+      list-style-position: outside;
+      margin-left: theme("margin.6");
+    }
+
+    .chroma {
+      color: #fafafa;
+      background: theme("colors.zinc.950");
+      font-family: "Iosevka GarrettDavisDev Web", monospace;
+      font-size: 1em;
+      text-align: left;
+      white-space: pre;
+      word-spacing: normal;
+      word-break: normal;
+      word-wrap: normal;
+      line-height: 1.5;
+      -moz-tab-size: 4;
+      -o-tab-size: 4;
+      tab-size: 4;
+      -webkit-hyphens: none;
+      -moz-hyphens: none;
+      -ms-hyphens: none;
+      hyphens: none;
+      padding: 1em;
+      margin: 0.5em 0;
+      overflow: auto;
+      background: #09090b;
+      border-radius: 0.25rem;
+
+      .ln,
+      .cl {
+        padding-right: 0.75rem;
+      }
+    }
+  }
+}
