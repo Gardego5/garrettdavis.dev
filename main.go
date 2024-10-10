@@ -9,8 +9,6 @@ import (
 	"github.com/Gardego5/garrettdavis.dev/middleware"
 	"github.com/Gardego5/garrettdavis.dev/routes"
 	"github.com/Gardego5/goutils/env"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
 
 var (
@@ -42,9 +40,5 @@ func main() {
 		}
 	}()
 
-	if _, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME"); ok {
-		lambda.Start(httpadapter.NewFunctionURL(mux).ProxyWithContext)
-	} else {
-		http.ListenAndServe(fmt.Sprintf("%s:%s", env.Host, env.Port), mux)
-	}
+	http.ListenAndServe(fmt.Sprintf("%s:%s", env.Host, env.Port), mux)
 }

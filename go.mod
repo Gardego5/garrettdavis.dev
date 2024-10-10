@@ -9,8 +9,6 @@ require (
 	github.com/Gardego5/goutils v0.0.2
 	github.com/Gardego5/htmdsl v0.0.10-0.20241005012021-6826d09b3a58
 	github.com/alecthomas/chroma/v2 v2.14.0
-	github.com/aws/aws-lambda-go v1.47.0
-	github.com/awslabs/aws-lambda-go-api-proxy v0.16.0
 	github.com/elliotchance/pie/v2 v2.9.0
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/google/uuid v1.6.0
