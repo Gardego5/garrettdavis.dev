@@ -2,64 +2,22 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { nixpkgs, naersk, fenix, flake-utils, ... }:
+  outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         name = "garrettdavis-dev";
-        src = ./app;
+        src = ./.;
 
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
         };
 
-        toolchain = with fenix.packages.${system};
-          combine [
-            minimal.rustc
-            minimal.cargo
-            targets.aarch64-unknown-linux-gnu.latest.rust-std
-            targets.aarch64-unknown-linux-musl.latest.rust-std
-          ];
-
-        naersk' = naersk.lib.${system}.override {
-          cargo = toolchain;
-          rustc = toolchain;
-        };
-
-        app = naersk'.buildPackage {
-          inherit src;
-          strictDeps = true;
-        };
-
-        css = pkgs.stdenv.mkDerivation {
-          inherit src;
-          name = "style.css";
-          #phases = [ "buildCommand" ];
-          buildCommand = ''
-            ${pkgs.tailwindcss}/bin/tailwindcss \
-              -c $src/tailwind.config.js \
-              -i $src/input.css -o $out/share/css/style.css --minify
-          '';
-        };
-
-        static = pkgs.stdenv.mkDerivation {
-          src = ./.;
-          name = "static";
-          phases = [ "buildCommand" ];
-          buildCommand = ''
-            mkdir -p $out/share
-            cp -r $src/static/* $out/share
-          '';
+        crossPkgs = import nixpkgs {
+          localSystem = system;
+          crossSystem = "x86_64-linux";
         };
 
         font = let
@@ -120,41 +78,49 @@
           '';
         };
 
-        staticDir = pkgs.symlinkJoin {
-          name = "staticDir";
-          paths = [ css font static ];
+        app = crossPkgs.buildGo123Module rec {
+          pname = "github.com/Gardego5/garrettdavis.dev";
+          version = "v0.0.1";
+          nativeBuildInputs = [ pkgs.tailwindcss pkgs.rsync pkgs.nix ];
+          preBuild = ''
+            # generate static files
+            go generate -tags ${builtins.concatStringsSep "," tags} ./...
+            # copy static files that are generated with nix
+            mkdir -p ./build/share
+            rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
+          '';
+          inherit src;
+          vendorHash = "sha256-brMqDJtTjw199c7AD2TcDrwmOj8TddvDX7JTMpG67WA=";
+          tags = [ "fonts" "static" ];
         };
 
-        dockerImage = pkgs.dockerTools.buildLayeredImage {
+        dockerImage = crossPkgs.dockerTools.buildImage {
           name = "registry.fly.io/${name}";
           tag = "latest";
           created = "now";
-          contents = [ pkgs.curl ];
+          copyToRoot = [ pkgs.curl pkgs.cacert ];
           config = {
             Expose = 3000;
-            Cmd = [ "${app}/bin/garrettdavis-dev" ];
-            Env = [ "DATA_DIR=${./data}" "STATIC_DIR=${staticDir}/share" ];
+            Cmd = [ "${app}/bin/garrettdavis.dev" ];
+            Env = [ "FONTS_DIR=${font}/share/fonts" "PORT=3000" ];
           };
         };
 
       in {
-        packages = { inherit app css dockerImage font staticDir; };
+        packages = { inherit app dockerImage font; };
 
-        devShells.default = pkgs.mkShell {
-          packages = [ toolchain fenix.packages.${system}.rust-analyzer ]
-            ++ (with pkgs; [
-              cargo-outdated
-              cargo-release
-              cargo-watch
-              rustfmt
-              terraform
+        devShells = {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              go_1_23
+              gopls
+              just
               tailwindcss
               flyctl
-              just
-              watchexec
-              kubectl
-            ]);
-          RUST_BACKTRACE = 1;
+              turso-cli
+            ];
+          };
+          cicd = pkgs.mkShell { packages = with pkgs; [ docker flyctl just ]; };
         };
       });
 }
