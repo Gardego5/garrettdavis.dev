@@ -31,9 +31,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: Build & Push new Image.
-        run:
-          docker load < $(nix build .#dockerImage --print-out-paths --no-link)
-          docker image push registry.fly.io/garrettdavis-dev:latest
+        run: just docker-push
       - name: Deploy
         run: fly deploy --remote-only
         env:
