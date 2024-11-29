@@ -1,0 +1,114 @@
+preface: |
+  I am a software engineer. I love to make reliable, maintainable, simple, and enjoyable to use software.
+sections:
+  - title: Technical Skills
+    items:
+      - title: Programming Languages
+        list:
+          - Go
+          - TypeScript
+          - JavaScript
+          - Nix
+          - Rust
+          - HCL
+          - Python
+          - Shell
+          - PHP
+          - Java
+
+      - title: Frontend
+        list:
+          - NextJS
+          - React
+          - Vue
+          - Nuxt
+          - HTML
+          - CSS
+          - TailwindCSS
+          - Bootstrap
+          - MaterialUI
+          - SASS
+
+      - title: Libraries
+        list:
+          - Sqlx
+          - Gin
+          - Go's testing package
+          - Express
+          - NextAuth
+          - TRPC
+          - Axum
+          - Zod
+          - esbuild
+
+      - title: Databases
+        list:
+          - MySQL
+          - DynamoDB
+          - SQLite
+          - PostgreSQL
+          - IndexedDB
+
+      - title: CI/CD Tools
+        list:
+          - Terraform
+          - AWS CodeBuild
+          - AWS CodePipeline
+          - GitHub Actions
+          - NixOS
+
+  - title: Personal Skills
+    items:
+      - title: Teaching
+        block: |
+          I seek out new technologies and look for how they might benefit my current work. After I find something useful and applicable, I love to share this with my team - and strive to help my whole group excel. For example while working as a contractor at University of Phoenix, I volunteered and then lead a talk on building AWS Lambda functions using Rust.
+
+      - title: Leadership
+        block: |
+          I managed a team of 3-7 baristas while working at Starbucks. I lead our store to be the top in our district for customer connection by focusing on technical excellence and meaningful conversations with our customers.
+
+  - title: Experience
+    items:
+      - title: University of Phoenix
+        subtitle: Software Engineer I
+        annotation: 10/23 - Present
+        list:
+          - I spearheaded the transition from typescript to Go for backend microservices.
+          - I built a custom role based authorization system supporting multiple organizations and scopes.
+          - When requirements changed, I refactored our Go backend from microservices to a monolith architecture to support the new use case.
+          - I built multiple smooth login processes using OAuth2 integrating with AzureAD, AWS Cognito, and Google auth providers.
+
+      - title: Cook Systems - University of Phoenix
+        subtitle: Contract Software Engineer
+        annotation: 10/22 - 10/23
+        list:
+          - Revamped existing authentication flow built with PHP to integrate with NextAuth and custom Django / EdX authentication system.
+          - I built automatically generated sitemap for marketing website.
+          - I built a tool to programatically test lighthouse scores across entire marketing site.
+          - I built a custom replacement for Terraform Cloud using s3 backend and codepipeline, reducing time to create a new project's cicd infrastrucure from roughly 8 hours down to only 15 - 30 minutes.
+
+      - title: MSR-FSR
+        subtitle: Production Technician
+        annotation: 10/21 - 02/22
+        list:
+          - Performed detail oriented work in a cleanroom environment.
+
+      - title: Starbucks
+        subtitle: Shift Supervisor
+        annotation: 08/18 - 10/21
+        list:
+          - Mentored multiple baristas toward promotion to supervisor by encouraging them to coach others.
+          - I created opportunities for training and used commendation to encourage individual growth.
+          - Grew our  team by training 18+ new hires while instilling Starbucks quality and customer service values.
+          - I lead coffee tastings focusing on the science and history in each cup.
+          - Managed a team of 3-7 people, promoting communication and teamwork.
+
+  - title: Education
+    items:
+      - title: Cook Systems FastTrack'D
+        annotation: 07/22 - 09/22
+        block: Concentrated Java Frameworks and developer tools training.
+
+      - title: Portland Community College
+        annotation: 09/16 - 03/20
+        block: Associate of General Studies. Emphasis on GIS, Cartography, and Math.

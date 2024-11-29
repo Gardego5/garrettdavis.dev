@@ -78,10 +78,58 @@
           '';
         };
 
+        msgp-go = pkgs.buildGoModule rec {
+          name = "msgp";
+          version = "v1.2.2";
+          src = pkgs.fetchFromGitHub {
+            owner = "tinylib";
+            repo = "msgp";
+            rev = version;
+            sha256 = "sha256-5AXy3/FFNrgqWRf/4t2vFpJeBcGaE6LZCFaKNvLhmH0=";
+          };
+          doCheck = false;
+          vendorHash = "sha256-aWS13hx7ZVJGArBS381GJTvhd8Kl6WtbMIGEGV/iChY=";
+        };
+
+        tailwind = let
+          throwSystem =
+            throw "tailwindcss has not been packaged for ${system} yet.";
+
+          plat = {
+            aarch64-darwin = "macos-arm64";
+            aarch64-linux = "linux-arm64";
+            armv7l-linux = "linux-armv7";
+            x86_64-darwin = "macos-x64";
+            x86_64-linux = "linux-x64";
+          }.${system} or throwSystem;
+
+          sha256 = {
+            aarch64-darwin =
+              "bce402ef6da7f3da611021a389bec0bf082c8c85a8bed284d8ccd86d9eafff8c";
+            aarch64-linux = pkgs.lib.fakeSha256;
+            armv7l-linux = pkgs.lib.fakeSha256;
+            x86_64-darwin = pkgs.lib.fakeSha256;
+            x86_64-linux = pkgs.lib.fakeSha256;
+          }.${system} or throwSystem;
+
+        in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
+          version = "4.0.0-beta.1";
+          src = pkgs.fetchurl {
+            url =
+              "https://github.com/tailwindlabs/tailwindcss/releases/download/v${version}/tailwindcss-${plat}";
+            inherit sha256;
+          };
+          installPhase = ''
+            mkdir -p $out/bin
+            cp ${src} $out/bin/tailwindcss
+            chmod 755 $out/bin/tailwindcss
+          '';
+        });
+
         app = crossPkgs.buildGo123Module rec {
           pname = "github.com/Gardego5/garrettdavis.dev";
           version = "v0.0.1";
-          nativeBuildInputs = [ pkgs.tailwindcss pkgs.rsync pkgs.nix ];
+          nativeBuildInputs = [ pkgs.tailwindcss pkgs.rsync pkgs.nix msgp-go ];
           preBuild = ''
             # generate static files
             go generate -tags ${builtins.concatStringsSep "," tags} ./...
@@ -90,7 +138,7 @@
             rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
           '';
           inherit src;
-          vendorHash = "sha256-fuyTpQ9n9Idr5vk8dakEXmgOrzO+cnq3RiLVftnHNwQ=";
+          vendorHash = "sha256-qgOamviwFiwG+1GcEKKOBGNASZpTkj8GU5RmiIZOVQ0=";
           tags = [ "fonts" "static" ];
         };
 
@@ -107,17 +155,21 @@
         };
 
       in {
-        packages = { inherit app dockerImage font; };
+        packages = { inherit app dockerImage font tailwind; };
 
         devShells = {
           default = pkgs.mkShell {
             packages = with pkgs; [
+              flyctl
               go_1_23
               gopls
               just
-              tailwindcss
-              flyctl
+              redis
+              tailwind
               turso-cli
+              wire
+
+              msgp-go
             ];
           };
           cicd = pkgs.mkShell { packages = with pkgs; [ docker flyctl just ]; };

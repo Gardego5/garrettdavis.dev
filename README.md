@@ -18,8 +18,48 @@ aws lambda, api gateway and cloudfront.
 
 ### Pages
 
-- [ ] Landing Page
+- [x] Landing Page
 - [ ] Notes Browser
 - [ ] Projects Page
 - [ ] About Me
-- [ ] Resume Page
+- [x] Resume Page
+- [ ] Blog Index
+      somewhat done, ready, but only displayed on index currently
+- [ ] Coffee Today
+
+## Coffee Today
+
+A short form more regular way to post something.
+Easier talking point is what coffee did I have today, sort of a mini review...
+Probably won't be daily, but a good way to keep the site fresh.
+
+### Logged In
+
+- [ ] Ability to create coffee posts with simple form.
+- [ ] Prompt user for images to upload.
+- [ ] Preview before posting.
+- [ ] Automatically add the date.
+
+Schema akin to:
+
+```go
+type Coffee struct {
+    Date time.Time
+    Title *string // optional - only replace default title if present
+    Roaster string
+    RoasterUrl *string
+    TastingNotes []string // optional
+    Pictures []string // store in tigris s3
+
+    Ideas []string // optional - short notes or ideas for the day, maybe like a 'did you know?'
+}
+```
+
+### Public
+
+- [ ] Users can view an index of coffee posts by date.
+- [ ] The index shows the images from the post, title, and date.
+- [ ] Homepage has a coffee mug that points to the most recent coffee post.
+- [ ] Send me a coffee button that links to some way to send funds.
+- [ ] Contact form for sending me a message...
+      Maybe different from normal contact form, and prompt for optionally including a picture of your coffee.

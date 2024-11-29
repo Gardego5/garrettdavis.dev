@@ -1,23 +1,49 @@
 package routes
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Gardego5/garrettdavis.dev/components"
-	"github.com/Gardego5/garrettdavis.dev/middleware"
+	"github.com/Gardego5/garrettdavis.dev/resource/render"
+	"github.com/Gardego5/garrettdavis.dev/service/blog"
 	. "github.com/Gardego5/htmdsl"
 	"github.com/elliotchance/pie/v2"
 )
 
-func GetIndex(w http.ResponseWriter, r *http.Request) {
-	middleware.RenderPage(r,
+type BlogPostSummary struct{ *blog.Post }
+
+func (p BlogPostSummary) Render(ctx context.Context) RenderedHTML {
+	return Div{Class("flex flex-col gap-2 my-4"),
+		H2{Class("text-xl"),
+			A{Attrs{{"href", fmt.Sprintf("/blog/%s", p.Name)}}, p.Title},
+		},
+		P{Class("text-gray-500 text-base"), p.Description},
+	}.Render(ctx)
+}
+
+type Index struct {
+	blog *blog.Service
+}
+
+func NewIndex(
+	blog *blog.Service,
+) *Index {
+	return &Index{
+		blog: blog,
+	}
+}
+
+func (h *Index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	render.Page(w, r,
 		Fragment{
 			Title{"Garrett Davis"},
 			Meta{{"name", "description"}, {"content", "Garrett Davis is a young software developer who cares deaply about creating great software for people."}},
 		},
 
 		components.Header{},
-		components.Margins(
+		components.Margins{
 			Main{Class("text-lg"),
 				P{Class("mb-12"),
 					"hello! i'm garrett. ",
@@ -63,9 +89,9 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 					},
 
 					Span{Class("text-sm text-center"),
-						Span{Class("text-nowrap"), "&lt;--"},
+						Span{Class("text-nowrap"), "<--"},
 						" find me here ",
-						Span{Class("text-nowrap"), "--&gt;"},
+						Span{Class("text-nowrap"), "-->"},
 					},
 
 					Div{
@@ -87,10 +113,10 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 				Hr{},
 
-				pie.Map(livePostsList(), func(post BlogPost) RenderedHTML {
-					return Fragment{post.Summary(), Hr{}}
+				pie.Map(h.blog.Live(), func(post blog.Post) RenderedHTML {
+					return Fragment{BlogPostSummary{&post}, Hr{}}
 				}),
 			},
-		),
+		},
 	)
 }

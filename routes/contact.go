@@ -1,22 +1,37 @@
 package routes
 
 import (
+	"context"
 	"fmt"
+	"html"
 	"math/rand"
 	"net/http"
 	"reflect"
 	"time"
 
 	"github.com/Gardego5/garrettdavis.dev/components"
-	"github.com/Gardego5/garrettdavis.dev/global"
-	"github.com/Gardego5/garrettdavis.dev/middleware"
-	"github.com/Gardego5/garrettdavis.dev/schema"
+	"github.com/Gardego5/garrettdavis.dev/model"
+	"github.com/Gardego5/garrettdavis.dev/resource/access"
+	"github.com/Gardego5/garrettdavis.dev/resource/render"
+	"github.com/Gardego5/garrettdavis.dev/service/messages"
 	. "github.com/Gardego5/htmdsl"
 	. "github.com/Gardego5/htmdsl/util"
 	"github.com/go-playground/validator/v10"
 )
 
-func GetContact(w http.ResponseWriter, r *http.Request) {
+type Contact struct {
+	messages *messages.Service
+	validate *validator.Validate
+}
+
+func NewContact(
+	messages *messages.Service,
+	v *validator.Validate,
+) *Contact {
+	return &Contact{messages: messages, validate: v}
+}
+
+func (*Contact) GET(w http.ResponseWriter, r *http.Request) {
 	var name, email string
 	switch rand.Intn(4) {
 	case 0:
@@ -29,7 +44,7 @@ func GetContact(w http.ResponseWriter, r *http.Request) {
 		name, email = "Sara Clay", "sara@clay.dev"
 	}
 
-	middleware.RenderPage(r, Title{"Contact Garrett"},
+	render.Page(w, r, Title{"Contact Garrett"},
 		components.Header{},
 		components.Margins(Form{Class("relative grid gap-2 rounded border border-slate-500 bg-gray-800 p-4 sm:grid-cols-2 md:grid-cols-3"),
 			Attrs{{"hx-post", "/contact"}, {"hx-swap", "innerHTML"}, {"hx-target-error", "#form-error"}},
@@ -73,33 +88,33 @@ type contactMessageErrors struct {
 	General, Name, Email, Message error
 }
 
-func (c contactMessageErrors) Render() RenderedHTML {
+func (c contactMessageErrors) Render(context.Context) RenderedHTML {
 	return Fragment{
 		Span{Switch().
-			Case(c.General != nil, Block(func() any { return c.General.Error() })).
+			Case(c.General != nil, func() any { return c.General.Error() }).
 			Case(c.Name == nil && c.Email == nil && c.Message == nil, "Some unkown error occurred. Please try again.").
 			Default("Please fix these errors.")},
 		Div{Attr{"hx-swap-oob", "innerHTML:#name-error"},
-			Span{If(c.Name != nil, Block(func() any { return c.Name.Error() }))}},
+			Span{If(c.Name != nil, func() any { return c.Name.Error() })}},
 		Div{Attr{"hx-swap-oob", "innerHTML:#email-error"},
-			Span{If(c.Email != nil, Block(func() any { return c.Email.Error() }))}},
+			Span{If(c.Email != nil, func() any { return c.Email.Error() })}},
 		Div{Attr{"hx-swap-oob", "innerHTML:#message-error"},
-			Span{If(c.Message != nil, Block(func() any { return c.Message.Error() }))}},
+			Span{If(c.Message != nil, func() any { return c.Message.Error() })}},
 	}
 }
 
-func PostContact(w http.ResponseWriter, r *http.Request) {
-	logger := middleware.GetLogger(r)
-	db := middleware.GetDB(r)
+func (h *Contact) POST(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := access.Logger(ctx, "PostContact")
 
-	body := schema.ContactMessage{
+	body := model.ContactMessage{
 		Name:      r.FormValue("name"),
 		Email:     r.FormValue("email"),
 		Message:   r.FormValue("message"),
-		CreatedAt: time.Now(),
+		CreatedAt: model.Time{Time: time.Now()},
 	}
 
-	if err := global.Validate.Struct(body); err != nil {
+	if err := h.validate.Struct(body); err != nil {
 		resp := contactMessageErrors{}
 
 		for _, e := range err.(validator.ValidationErrors) {
@@ -117,7 +132,11 @@ func PostContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := db.NamedExec("INSERT INTO contact_messages (name, email, message, created_at) VALUES (:name, :email, :message, :created_at)", body); err != nil {
+	// escape html... just in case
+	body.Name = html.EscapeString(body.Name)
+	body.Message = html.EscapeString(body.Message)
+
+	if err := h.messages.CreateMessage(ctx, &body); err != nil {
 		logger.Error("error inserting contact message", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		Render(w, contactMessageErrors{General: err})

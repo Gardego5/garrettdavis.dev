@@ -4,17 +4,17 @@ import (
 	"net/http"
 
 	"github.com/Gardego5/garrettdavis.dev/components"
-	"github.com/Gardego5/garrettdavis.dev/middleware"
+	"github.com/Gardego5/garrettdavis.dev/resource/render"
 	. "github.com/Gardego5/htmdsl"
 )
 
 func Get404(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
-	middleware.RenderPage(r, nil,
+	render.Page(w, r, nil,
 		components.Header{},
-		components.Margins(
+		components.Margins{
 			"I don't exist yet. ",
-			Code{"¯\\\\_(ツ)_/¯"},
-		),
+			Code{"¯\\_(ツ)_/¯"},
+		},
 	)
 }
