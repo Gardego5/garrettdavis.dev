@@ -15,3 +15,7 @@ func Must[T any](val T, err error) T {
 	}
 	return val
 }
+
+func Ptr[T any](val T) *T {
+	return &val
+}

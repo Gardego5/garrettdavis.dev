@@ -85,7 +85,7 @@
             owner = "tinylib";
             repo = "msgp";
             rev = version;
-            sha256 = "sha256-5AXy3/FFNrgqWRf/4t2vFpJeBcGaE6LZCFaKNvLhmH0=";
+            sha256 = "sha256-h3l3PsfK/uWwjOLxhj4XukWVzcydLuv60TKTc15YA3A=";
           };
           doCheck = false;
           vendorHash = "sha256-aWS13hx7ZVJGArBS381GJTvhd8Kl6WtbMIGEGV/iChY=";
@@ -103,21 +103,22 @@
             x86_64-linux = "linux-x64";
           }.${system} or throwSystem;
 
-          sha256 = {
+          hash = {
             aarch64-darwin =
-              "bce402ef6da7f3da611021a389bec0bf082c8c85a8bed284d8ccd86d9eafff8c";
-            aarch64-linux = pkgs.lib.fakeSha256;
-            armv7l-linux = pkgs.lib.fakeSha256;
-            x86_64-darwin = pkgs.lib.fakeSha256;
-            x86_64-linux = pkgs.lib.fakeSha256;
+              "sha256-9fXOd/fg56zLK91zECeu80xjNqaUdCSAA9y0LAB8uRc=";
+            aarch64-linux = pkgs.lib.fakeHash;
+            armv7l-linux = pkgs.lib.fakeHash;
+            x86_64-darwin = pkgs.lib.fakeHash;
+            x86_64-linux =
+              "sha256-KJZyiaZBbl0Aa5OTp7KELJlXKLXyiV1irgstCT1vANo=";
           }.${system} or throwSystem;
 
         in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
-          version = "4.0.0-beta.1";
+          version = "4.0.0-beta.4";
           src = pkgs.fetchurl {
             url =
               "https://github.com/tailwindlabs/tailwindcss/releases/download/v${version}/tailwindcss-${plat}";
-            inherit sha256;
+            inherit hash;
           };
           installPhase = ''
             mkdir -p $out/bin
@@ -129,7 +130,7 @@
         app = crossPkgs.buildGo123Module rec {
           pname = "github.com/Gardego5/garrettdavis.dev";
           version = "v0.0.1";
-          nativeBuildInputs = [ pkgs.tailwindcss pkgs.rsync pkgs.nix msgp-go ];
+          nativeBuildInputs = [ tailwind pkgs.rsync msgp-go ];
           preBuild = ''
             # generate static files
             go generate -tags ${builtins.concatStringsSep "," tags} ./...
@@ -138,7 +139,7 @@
             rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
           '';
           inherit src;
-          vendorHash = "sha256-qgOamviwFiwG+1GcEKKOBGNASZpTkj8GU5RmiIZOVQ0=";
+          vendorHash = "sha256-hQWoaVdZRqmRp2yveZCpUqiBqiXLZ7FMDDFX0FWzdNE=";
           tags = [ "fonts" "static" ];
         };
 
@@ -150,7 +151,11 @@
           config = {
             Expose = 3000;
             Cmd = [ "${app}/bin/garrettdavis.dev" ];
-            Env = [ "FONTS_DIR=${font}/share/fonts" "PORT=3000" ];
+            Env = [
+              "FONTS_DIR=${font}/share/fonts"
+              "PORT=3000"
+              "CACHE_ID=${builtins.hashString "md5" (builtins.toString app)}"
+            ];
           };
         };
 
@@ -161,6 +166,7 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               flyctl
+              fblog
               go_1_23
               gopls
               just
@@ -172,7 +178,9 @@
               msgp-go
             ];
           };
-          cicd = pkgs.mkShell { packages = with pkgs; [ docker flyctl just ]; };
+          cicd = pkgs.mkShell {
+            packages = with pkgs; [ docker flyctl just tailwind ];
+          };
         };
       });
 }

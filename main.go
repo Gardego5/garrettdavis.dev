@@ -5,18 +5,22 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Gardego5/garrettdavis.dev/resource/initialize"
 	"github.com/Gardego5/garrettdavis.dev/resource/middleware"
+	"github.com/Gardego5/garrettdavis.dev/resource/render"
 	"github.com/Gardego5/garrettdavis.dev/routes"
 	"github.com/Gardego5/garrettdavis.dev/service/blog"
 	"github.com/Gardego5/garrettdavis.dev/service/currentuser"
 	"github.com/Gardego5/garrettdavis.dev/service/messages"
 	"github.com/Gardego5/garrettdavis.dev/service/object"
 	"github.com/Gardego5/garrettdavis.dev/service/presentations"
+	"github.com/Gardego5/garrettdavis.dev/service/resume"
 	"github.com/Gardego5/garrettdavis.dev/utils"
 	"github.com/Gardego5/garrettdavis.dev/utils/mux"
 	"github.com/Gardego5/garrettdavis.dev/utils/symetric"
@@ -27,6 +31,7 @@ import (
 var (
 	Env = utils.Must(env.Load[struct {
 		ApplicationSecret string        `env:"APPLICATION_SECRET" validate:"required"`
+		CacheID           string        `env:"CACHE_ID" validate:"required"`
 		GithubOauthId     string        `env:"GITHUB_OAUTH_CLIENT_ID" validate:"required"`
 		GithubOauthSecret string        `env:"GITHUB_OAUTH_CLIENT_SECRET" validate:"required"`
 		Host              string        `env:"HOST=0.0.0.0" validate:"required"`
@@ -39,7 +44,7 @@ var (
 	}]())
 
 	Validate = validator.New()
-	Logger   = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: &Env.LogLevel}))
+	Logger   = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: &Env.LogLevel}))
 	DB       = initialize.NewDB(Env.TursoDatabaseUrl, Env.TursoAuthToken)
 	Redis    = initialize.NewRedis(Env.RedisUrl)
 	Enforcer = utils.Must(initialize.Enforcer(DB))
@@ -49,16 +54,18 @@ var (
 	// services
 	Blog          = blog.New()
 	CurrentUser   = currentuser.New(Caches)
+	ImagesBucket  = utils.Must(object.New(context.Background(), Env.ImagesBucket, Logger))
 	Messages      = utils.Must(messages.New(DB))
 	Presentations = presentations.New()
-	ImagesBucket  = utils.Must(object.New(context.Background(), Env.ImagesBucket, Logger))
+	Resume        = resume.New(Validate)
 
 	//go:embed static
 	Static embed.FS
 	//go:embed build/share/fonts
 	Fonts embed.FS
 
-	Mux = mux.NewServeMux(func(m *mux.ServeMux) {
+	StaticPrefix = fmt.Sprintf("/static/%s", Env.CacheID)
+	Mux          = mux.NewServeMux(func(m *mux.ServeMux) {
 		m.Group("/admin", func(m *mux.ServeMux) {
 			m.Group("/messages", func(m *mux.ServeMux) {
 				h := routes.NewAdminMessages(Messages)
@@ -75,7 +82,7 @@ var (
 		m.Group("/auth", func(m *mux.ServeMux) {
 			m.Handle("GET /callback", routes.NewAuthCallback(
 				Env.GithubOauthId, Env.GithubOauthSecret,
-				Validate, Block, CurrentUser, Caches))
+				Validate, Block, CurrentUser, Caches, Enforcer))
 			m.Group("/signin", func(m *mux.ServeMux) {
 				h := routes.NewAuthSignin(Env.GithubOauthId, Block)
 				m.HandleFunc("GET", h.GET)
@@ -95,27 +102,53 @@ var (
 		m.Handle("GET /presentations/{slug}", routes.NewPresentations(Presentations))
 
 		m.Handle("GET /resume", routes.NewResume())
-		m.Group("/static", func(m *mux.ServeMux) {
-			m.Handle("GET /", middleware.FileServerFS(Static))
-			m.Handle("GET /fonts/", http.StripPrefix("/static/fonts/", middleware.FileServerFS(Fonts)))
+
+		m.Group(StaticPrefix, func(m *mux.ServeMux) {
+			// static assets
+			static, err := fs.Sub(Static, "static")
+			if err != nil {
+				Logger.Error("startup error - error getting static assets fs", "error", err)
+				os.Exit(1)
+			}
+			m.Handle("GET /", http.StripPrefix(StaticPrefix, middleware.FileServerFS(static)))
+
+			// fonts
+			fonts, err := fs.Sub(Fonts, "build/share/fonts")
+			if err != nil {
+				Logger.Error("statup error - error getting font static assets fs", "error", err)
+				os.Exit(1)
+			}
+			m.Handle("GET /fonts/", http.StripPrefix(StaticPrefix+"/fonts", middleware.FileServerFS(fonts)))
 		},
 			middleware.NeuteredFileSystem,
+			mux.MiddlewareFunc(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Cache-Control", "max-age=31536000, immutable")
+					next.ServeHTTP(w, r)
+				})
+			}),
 		)
+
 		m.Handle("GET /{$}", routes.NewIndex(Blog))
 		m.HandleFunc("GET /", routes.Get404)
 	},
 		middleware.LoggerAndSessions(Logger, true),
 		middleware.TrailingSlash,
-		middleware.GenericAssets4(
-			Blog, CurrentUser, Messages, Presentations,
-		),
-		middleware.GenericAsset(
-			Validate,
+		middleware.Inject(
+			middleware.Syringe(Blog),
+			middleware.Syringe(CurrentUser),
+			middleware.Syringe(Messages),
+			middleware.Syringe(Presentations),
+			middleware.Syringe(Resume),
+			middleware.Syringe(Validate),
+			middleware.Syringe(utils.Ptr(render.StaticPathPrefix(StaticPrefix))),
 		),
 	)
 )
 
 func main() {
+	Logger := Logger.With("function", "main")
+
 	defer func() {
 		if err := errors.Join(
 			DB.Close(),
@@ -126,9 +159,29 @@ func main() {
 		}
 	}()
 
-	addr := fmt.Sprintf("%s:%d", Env.Host, Env.Port)
-	if err := http.ListenAndServe(addr, Mux); err != nil {
-		Logger.Error("Error starting server", "error", err)
-		os.Exit(1)
+	tickPolicy := time.NewTicker(time.Minute)
+
+	chServer := make(chan struct{})
+	go func() {
+		addr := fmt.Sprintf("%s:%d", Env.Host, Env.Port)
+		if err := http.ListenAndServe(addr, Mux); err != nil {
+			Logger.Error("Error starting server", "error", err)
+		}
+		chServer <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-tickPolicy.C:
+			if err := Enforcer.LoadPolicy(); err != nil {
+				Logger.Error("Error loading policy", "error", err)
+				return
+			} else {
+				Logger.Info("Policy reloaded")
+			}
+
+		case <-chServer:
+			return
+		}
 	}
 }

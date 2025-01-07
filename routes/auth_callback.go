@@ -17,6 +17,7 @@ import (
 	"github.com/Gardego5/garrettdavis.dev/utils/cookie"
 	"github.com/Gardego5/garrettdavis.dev/utils/symetric"
 	. "github.com/Gardego5/htmdsl"
+	"github.com/casbin/casbin/v2"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -27,6 +28,7 @@ type AuthCallback struct {
 	currentuser            *currentuser.Service
 	subjects               bimarshal.Cache[model.Subject]
 	accessTokens           bimarshal.Cache[model.GHAccessToken]
+	enforcer               *casbin.Enforcer
 }
 
 func NewAuthCallback(
@@ -35,6 +37,7 @@ func NewAuthCallback(
 	block cipher.Block,
 	currentuser *currentuser.Service,
 	caches bimarshal.RegisteredCaches,
+	enforcer *casbin.Enforcer,
 ) *AuthCallback {
 	return &AuthCallback{
 		clientId:     clientId,
@@ -44,6 +47,7 @@ func NewAuthCallback(
 		currentuser:  currentuser,
 		subjects:     bimarshal.Get[model.Subject](caches),
 		accessTokens: bimarshal.Get[model.GHAccessToken](caches),
+		enforcer:     enforcer,
 	}
 }
 
@@ -142,6 +146,18 @@ func (h *AuthCallback) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sub := model.Subject{User: user.GetLogin()}
+
+	if has, err := h.enforcer.Enforce(sub, "/auth/callback", "GET"); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error("Error enforcing policy", "error", err)
+		render.Page(w, r, nil, P{"An error has occurred."})
+		return
+	} else if !has {
+		w.WriteHeader(http.StatusForbidden)
+		logger.Warn("User does not have permission")
+		render.Page(w, r, nil, P{"Why are you here?"})
+		return
+	}
 
 	/*
 		TODO: signup restrictions.

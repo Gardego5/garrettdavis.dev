@@ -83,9 +83,9 @@ func (h *AuthSignin) POST(w http.ResponseWriter, r *http.Request) {
 	u := fmt.Sprintf("https://github.com/login/oauth/authorize?%s", q.Encode())
 	render.Page(w, r, nil,
 		components.Header{},
-		components.Margins{
+		components.Margins{Attrs{{"x-data"}, {"@click", "$refs.authorize.click()"}},
 			P{"Redirecting to github for authentication..."},
 			P{"If you are not redirected, click the link below."},
-			A{Attrs{{"href", u}}, "Sign in with Github"},
+			A{Attrs{{"href", u}, {"x-ref", "authorize"}}, "Sign in with Github"},
 		})
 }

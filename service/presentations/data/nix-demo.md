@@ -11,7 +11,7 @@ Foremost in choosing what capabilities of nix to showcase was _incremental adopt
 class: grid place-content-center
 ```
 
-<div class="max-w-3xl grid grid-cols-[8ch,auto]">
+<div class="max-w-3xl grid grid-cols-[8ch_auto]">
   <span class="col-start-1 col-span-2 text-slate-500" role="presentation">NAME</span>
   <h2 class="col-start-2 col-span-1 leading-4">Nix</h2>
   <br />

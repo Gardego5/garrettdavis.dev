@@ -1,7 +1,6 @@
-//go:build pendingsettingupaccess
-
 package access
 
+/*
 import (
 	"context"
 	"net/http"
@@ -61,3 +60,4 @@ func RequireAuth() mux.Middleware {
 		})
 	})
 }
+*/

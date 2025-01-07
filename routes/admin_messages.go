@@ -46,7 +46,7 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 		},
 			pie.Map(messages, func(msg model.ContactMessage) any {
 				return Li{Class(
-					"relative rounded border border-slate-500 bg-gray-800 p-4",
+					"relative rounded-sm border border-slate-500 bg-gray-800 p-4",
 					"[&.htmx-swapping]:transition-opacity [&.htmx-swapping]:opacity-0",
 				),
 					Div{Class("flex justify-between mb-2 mx-2"),
@@ -56,17 +56,17 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 						},
 					},
 
-					P{Class("bg-zinc-900 rounded border border-slate-500 px-2 py-1"),
+					P{Class("bg-zinc-900 rounded-sm border border-slate-500 px-2 py-1"),
 						msg.Message,
 					},
 
 					Div{Class("absolute -bottom-[7px] right-8 flex gap-2"),
-						P{Class("rounded border border-slate-500 bg-zinc-900 px-4 py-1 text-xs grid place-items-center"),
+						P{Class("rounded-sm border border-slate-500 bg-zinc-900 px-4 py-1 text-xs grid place-items-center"),
 							msg.CreatedAt.Time.Format("Mon, July 30, 2006 15:04:05"),
 						},
 
 						Button{Attrs{
-							Class("rounded border border-slate-500 bg-zinc-900 px-4 py-1 text-sm hover:bg-red-800 grid place-items-center"),
+							Class("rounded-sm border border-slate-500 bg-zinc-900 px-4 py-1 text-sm hover:bg-red-800 grid place-items-center"),
 							{"hx-delete", fmt.Sprintf("/admin/messages/%d", msg.ID)},
 						},
 							Element("iconify-icon", Attrs{{"icon", "mdi:delete-outline"}, {"width", "20"}, {"height", "20"}}),

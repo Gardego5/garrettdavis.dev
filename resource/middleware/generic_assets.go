@@ -8,7 +8,40 @@ import (
 	"github.com/Gardego5/garrettdavis.dev/utils/mux"
 )
 
-func GenericAsset[A any](a *A) mux.Middleware {
+type (
+	boundKey[A any] struct {
+		key internal.GenericKey[A]
+		val *A
+	}
+	syringe interface {
+		inject(context.Context) context.Context
+	}
+)
+
+func (b boundKey[A]) inject(ctx context.Context) context.Context {
+	return context.WithValue(ctx, b.key, b.val)
+}
+
+func Syringe[A any](a *A) boundKey[A] {
+	return boundKey[A]{
+		key: internal.GenericKey[A]{},
+		val: a,
+	}
+}
+
+func Inject(assets ...syringe) mux.Middleware {
+	return mux.MiddlewareFunc(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			for _, a := range assets {
+				ctx = a.inject(ctx)
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
+}
+
+func GenericAssets[A any](a *A) mux.Middleware {
 	return mux.MiddlewareFunc(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

@@ -27,7 +27,7 @@ const (
 func (header Header) Render(ctx context.Context) html.RenderedHTML {
 	headerTextClass := "mx-auto max-w-3xl px-4 pb-1 md:py-1"
 	return html.Header{
-		html.Class("overflow-hidden border-b border-slate-500 bg-zinc-950 pt-3 top-0 z-10"),
+		html.Class("overflow-hidden border-b border-slate-500 bg-zinc-50 dark:bg-zinc-950 pt-3 top-0 z-10"),
 		util.If(header.Variant == HeaderFloating, html.Class("sticky")).Else(html.Class("relative")),
 
 		util.If(header.Title != "",
@@ -44,7 +44,7 @@ func (header Header) Render(ctx context.Context) html.RenderedHTML {
 			}),
 
 		html.Nav{
-			html.Class("relative -left-1 mx-auto mb-1 flex justify-end max-w-3xl flex-shrink items-center gap-4 px-3 text-sm after:absolute after:-left-[100%] after:-z-10 after:h-[1px] after:w-[1000vw] after:bg-slate-500 md:text-base [&>*]:bg-zinc-950 [&>*]:px-2"),
+			html.Class("relative -left-1 mx-auto mb-1 flex justify-end max-w-3xl shrink items-center gap-4 px-3 text-sm after:absolute after:-left-[100%] after:-z-10 after:h-[1px] after:w-[1000vw] after:bg-slate-300 dark:after:bg-slate-500 md:text-base *:bg-zinc-50 *:dark:bg-zinc-950 *:px-2"),
 			func(ctx context.Context) any {
 				svc := access.Get[currentuser.Service](ctx)
 				session := access.Session(ctx)
@@ -100,7 +100,7 @@ get menuStyle() {
 									{":style", "menuStyle"},
 									{"x-anchor.bottom-start.offset.10", "$refs.button"},
 									{"@click.outside", "close($refs.button)"},
-									html.Class("bg-zinc-950 shadow-md text-blue z-20 p-2"),
+									html.Class("bg-zinc-50 dark:bg-zinc-950 shadow-md text-blue z-20 p-2"),
 								},
 									html.Li{html.A{html.Attrs{{"href", "/admin/user"}}, identifier}},
 									html.Li{html.A{html.Attrs{{"href", "/admin/messages"}}, "messages"}},
@@ -121,7 +121,7 @@ get menuStyle() {
 	}.Render(ctx)
 }
 
-type Margins html.Fragment
+type Margins []any
 
 func (children Margins) Render(ctx context.Context) html.RenderedHTML {
 	return html.Div{html.Class("p-4 m-auto max-w-3xl"), []any(children)}.Render(ctx)
