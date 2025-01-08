@@ -130,12 +130,13 @@
         app = crossPkgs.buildGo123Module rec {
           pname = "github.com/Gardego5/garrettdavis.dev";
           version = "v0.0.1";
-          nativeBuildInputs = [ tailwind pkgs.rsync msgp-go ];
+          nativeBuildInputs = [ pkgs.rsync msgp-go ];
           preBuild = ''
             # generate static files
             go generate -tags ${builtins.concatStringsSep "," tags} ./...
             # copy static files that are generated with nix
             mkdir -p ./build/share
+            "${tailwind}/bin/tailwindcss" -i input.css -o ./build/share/style.css
             rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
           '';
           inherit src;

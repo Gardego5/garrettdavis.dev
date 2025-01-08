@@ -31,7 +31,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: Build & Push new Image.
-        run: just docker-push || nix log /nix/store/ir33b050iv0m7fh0kz47fnbl9mddjlsk-github.com-Gardego5-garrettdavis.dev-v0.0.1.drv
+        run: just docker-push
       - name: Deploy
         run: fly deploy --remote-only
         env:

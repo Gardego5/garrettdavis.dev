@@ -1,5 +1,3 @@
-//go:generate tailwindcss -i input.css -o static/css/style.css
-
 package main
 
 import (
