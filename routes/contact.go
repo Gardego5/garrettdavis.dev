@@ -46,8 +46,8 @@ func (*Contact) GET(w http.ResponseWriter, r *http.Request) {
 
 	render.Page(w, r, Title{"Contact Garrett"},
 		components.Header{},
-		components.Margins(Form{Class("relative grid gap-2 rounded-sm border border-slate-500 bg-gray-200 dark:bg-gray-800 p-4 sm:grid-cols-2 md:grid-cols-3 mt-8"),
-			Attrs{{"hx-post", "/contact"}, {"hx-swap", "innerHTML"}, {"hx-target-error", "#form-error"}},
+		components.Margins{Form{Class("relative grid gap-2 rounded-sm border border-slate-500 bg-gray-200 dark:bg-gray-800 p-4 sm:grid-cols-2 md:grid-cols-3 mt-8"),
+			Attrs{{"action", "/contact"}, {"method", "POST"}, {"hx-swap", "innerHTML"}, {"hx-target-error", "#form-error"}},
 			H2{Class("text-2xl font-semibold col-span-full"),
 				"I'd love to hear from you!",
 			},
@@ -80,7 +80,7 @@ func (*Contact) GET(w http.ResponseWriter, r *http.Request) {
 				{"type", "submit"}},
 				"Send",
 			},
-		}),
+		}},
 	)
 }
 
@@ -106,6 +106,15 @@ func (c contactMessageErrors) Render(context.Context) RenderedHTML {
 func (h *Contact) POST(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := access.Logger(ctx, "PostContact")
+
+	if err := r.ParseForm(); err != nil {
+		logger.Error("error parsing form", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		Render(w, contactMessageErrors{General: err})
+		return
+	} else {
+		logger.Info("form parsed", "form", r.Form)
+	}
 
 	body := model.ContactMessage{
 		Name:      r.FormValue("name"),

@@ -47,7 +47,7 @@ var (
 	Logger   = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: &Env.LogLevel}))
 	DB       = initialize.NewDB(Env.TursoDatabaseUrl, Env.TursoAuthToken)
 	Redis    = initialize.NewRedis(Env.RedisUrl)
-	Enforcer = utils.Must(initialize.Enforcer(DB))
+	Enforcer = utils.Must(initialize.Enforcer(DB, Logger))
 	Caches   = initialize.Caches(Redis)
 	Block    = symetric.Block(Env.ApplicationSecret)
 
@@ -78,7 +78,8 @@ var (
 				h := routes.NewAdminCoffee(ImagesBucket)
 				m.HandleFunc("GET", h.GetAdminCoffee)
 			})
-		})
+		},
+			middleware.Authorization(Logger, Enforcer, CurrentUser))
 
 		m.Group("/auth", func(m *mux.ServeMux) {
 			m.Handle("GET /callback", routes.NewAuthCallback(

@@ -30,7 +30,7 @@ OFFSET :offset
 
 	if svc.deleteMessage, err = svc.db.PrepareNamed(`
 DELETE FROM contact_messages
- WHERE id = ?
+WHERE id = :id
 `); err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ type ListMessageInput struct {
 
 func (svc *Service) ListMessages(ctx context.Context, input *ListMessageInput) ([]model.ContactMessage, error) {
 	output := []model.ContactMessage{}
-	err := svc.listMessage.SelectContext(ctx, output, input)
+	err := svc.listMessage.SelectContext(ctx, &output, input)
 	return output, err
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Gardego5/garrettdavis.dev/components"
 	"github.com/Gardego5/garrettdavis.dev/model"
@@ -47,10 +48,10 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 			pie.Map(messages, func(msg model.ContactMessage) any {
 				return Li{Class(
 					"relative rounded-sm border border-slate-500 bg-gray-800 p-4",
-					"[&.htmx-swapping]:transition-opacity [&.htmx-swapping]:opacity-0",
+					"[&.htmx-swapping]:transition-opacity [&.htmx-swapping]:opacity-0 list-none",
 				),
 					Div{Class("flex justify-between mb-2 mx-2"),
-						Span{msg.Name},
+						Span{Class("flex-grow"),msg.Name},
 						A{Attrs{{"href", "mailto:" + msg.Email}, {"target", "_blank"}},
 							msg.Email,
 						},
@@ -62,7 +63,7 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 
 					Div{Class("absolute -bottom-[7px] right-8 flex gap-2"),
 						P{Class("rounded-sm border border-slate-500 bg-zinc-900 px-4 py-1 text-xs grid place-items-center"),
-							msg.CreatedAt.Time.Format("Mon, July 30, 2006 15:04:05"),
+							msg.CreatedAt.Time.Format(time.RFC1123Z),
 						},
 
 						Button{Attrs{
