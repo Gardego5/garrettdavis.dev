@@ -106,11 +106,6 @@
           hash = {
             aarch64-darwin =
               "sha256-VL+bwr8uTC7RvvRVQZ4z1OiBvGRVqjNq9QmV0qM6JtQ=";
-            aarch64-linux = pkgs.lib.fakeHash;
-            armv7l-linux = pkgs.lib.fakeHash;
-            x86_64-darwin = pkgs.lib.fakeHash;
-            x86_64-linux =
-              "sha256-ubuKTRcx5pYqK2wsNy33OpM4T+JMxLGW6+ciwhmolPs=";
           }.${system} or throwSystem;
 
         in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
@@ -130,7 +125,7 @@
         css = pkgs.stdenv.mkDerivation {
           name = "css";
           buildInputs = [ tailwind ];
-          src = ./.;
+          inherit src;
           phases = [ "installPhase" ];
           installPhase = ''
             mkdir -p $out/share
@@ -158,7 +153,9 @@
               drvs);
           });
 
-        build = rsyncDerivations "share" [ font css staticFiles ];
+        build = rsyncDerivations "share" ([ font staticFiles ] ++ (
+          # hack to accomodate tailwind v4 not yet being statically linked
+          if system == "aarch64-darwin" then [ css ] else [ ]));
 
         app = let
           module = rec {
@@ -201,22 +198,18 @@
         devShells = {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              flyctl
               fblog
+              flyctl
               go_1_23
               gopls
               just
+              msgp-go
               redis
-              tailwind
               turso-cli
               wire
-
-              msgp-go
             ];
           };
-          cicd = pkgs.mkShell {
-            packages = with pkgs; [ docker flyctl just tailwind ];
-          };
+          cicd = pkgs.mkShell { packages = with pkgs; [ docker flyctl just ]; };
         };
       });
 }
