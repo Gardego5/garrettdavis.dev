@@ -31,15 +31,16 @@ import (
 var (
 	Env = utils.Must(env.Load[struct {
 		ApplicationSecret string        `env:"APPLICATION_SECRET" validate:"required"`
+		BaseUrl           string        `env:"BASE_URL=https://garrettdavis.dev" validate:"required"`
 		GithubOauthId     string        `env:"GITHUB_OAUTH_CLIENT_ID" validate:"required"`
 		GithubOauthSecret string        `env:"GITHUB_OAUTH_CLIENT_SECRET" validate:"required"`
 		Host              string        `env:"HOST=0.0.0.0" validate:"required"`
+		ImagesBucket      string        `env:"IMAGES_BUCKET" validate:"required"`
 		LogLevel          slog.LevelVar `env:"LOG_LEVEL=INFO"`
 		Port              int           `env:"PORT=8080" validate:"required"`
 		RedisUrl          string        `env:"REDIS_URL" validate:"required"`
 		TursoAuthToken    string        `env:"TURSO_AUTH_TOKEN" validate:"required"`
 		TursoDatabaseUrl  string        `env:"TURSO_DATABASE_URL" validate:"required"`
-		ImagesBucket      string        `env:"IMAGES_BUCKET" validate:"required"`
 	}]())
 
 	Validate = validator.New()
@@ -82,9 +83,9 @@ var (
 		m.Group("/auth", func(m *mux.ServeMux) {
 			m.Handle("GET /callback", routes.NewAuthCallback(
 				Env.GithubOauthId, Env.GithubOauthSecret,
-				Validate, Block, CurrentUser, Caches, Enforcer))
+				Validate, Block, CurrentUser, Caches, Enforcer, Env.BaseUrl))
 			m.Group("/signin", func(m *mux.ServeMux) {
-				h := routes.NewAuthSignin(Env.GithubOauthId, Block)
+				h := routes.NewAuthSignin(Env.GithubOauthId, Block, Env.BaseUrl)
 				m.HandleFunc("GET", h.GET)
 				m.HandleFunc("POST", h.POST)
 			})

@@ -20,15 +20,18 @@ import (
 type AuthSignin struct {
 	clientId string
 	block    cipher.Block
+	baseUrl  string
 }
 
 func NewAuthSignin(
 	clientId string,
 	block cipher.Block,
+	baseUrl string,
 ) *AuthSignin {
 	return &AuthSignin{
 		clientId: clientId,
 		block:    block,
+		baseUrl:  baseUrl,
 	}
 }
 
@@ -73,7 +76,7 @@ func (h *AuthSignin) POST(w http.ResponseWriter, r *http.Request) {
 	c.Value = encryptedCode
 	http.SetCookie(w, &c)
 
-	redirectUri := "http://localhost:8080/auth/callback"
+	redirectUri := h.baseUrl + "/auth/callback"
 	logger.Info("Redirecting to github for authentication", "redirect_uri", redirectUri)
 	q := url.Values{}
 	q.Set("client_id", h.clientId)

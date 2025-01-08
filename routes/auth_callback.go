@@ -29,6 +29,7 @@ type AuthCallback struct {
 	subjects               bimarshal.Cache[model.Subject]
 	accessTokens           bimarshal.Cache[model.GHAccessToken]
 	enforcer               *casbin.Enforcer
+	baseUrl                string
 }
 
 func NewAuthCallback(
@@ -38,6 +39,7 @@ func NewAuthCallback(
 	currentuser *currentuser.Service,
 	caches bimarshal.RegisteredCaches,
 	enforcer *casbin.Enforcer,
+	baseUrl string,
 ) *AuthCallback {
 	return &AuthCallback{
 		clientId:     clientId,
@@ -48,6 +50,7 @@ func NewAuthCallback(
 		subjects:     bimarshal.Get[model.Subject](caches),
 		accessTokens: bimarshal.Get[model.GHAccessToken](caches),
 		enforcer:     enforcer,
+		baseUrl:      baseUrl,
 	}
 }
 
@@ -102,7 +105,7 @@ func (h *AuthCallback) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	q.Set("client_id", h.clientId)
 	q.Set("client_secret", h.clientSecret)
 	q.Set("code", payload.Code)
-	q.Set("redirect_uri", "http://localhost:8080/auth/callback")
+	q.Set("redirect_uri", h.baseUrl+"/auth/callback")
 	u := fmt.Sprintf("https://github.com/login/oauth/access_token?%s", q.Encode())
 	req, err := http.NewRequest("POST", u, nil)
 	if err != nil {
