@@ -105,16 +105,16 @@
 
           hash = {
             aarch64-darwin =
-              "sha256-9fXOd/fg56zLK91zECeu80xjNqaUdCSAA9y0LAB8uRc=";
+              "sha256-VL+bwr8uTC7RvvRVQZ4z1OiBvGRVqjNq9QmV0qM6JtQ=";
             aarch64-linux = pkgs.lib.fakeHash;
             armv7l-linux = pkgs.lib.fakeHash;
             x86_64-darwin = pkgs.lib.fakeHash;
             x86_64-linux =
-              "sha256-KJZyiaZBbl0Aa5OTp7KELJlXKLXyiV1irgstCT1vANo=";
+              "sha256-ubuKTRcx5pYqK2wsNy33OpM4T+JMxLGW6+ciwhmolPs=";
           }.${system} or throwSystem;
 
         in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
-          version = "4.0.0-beta.4";
+          version = "4.0.0-beta.8";
           src = pkgs.fetchurl {
             url =
               "https://github.com/tailwindlabs/tailwindcss/releases/download/v${version}/tailwindcss-${plat}";
@@ -130,13 +130,12 @@
         app = crossPkgs.buildGo123Module rec {
           pname = "github.com/Gardego5/garrettdavis.dev";
           version = "v0.0.1";
-          nativeBuildInputs = [ pkgs.just tailwind pkgs.rsync msgp-go ];
+          nativeBuildInputs = [ tailwind pkgs.rsync msgp-go ];
           preBuild = ''
             # generate static files
             go generate -tags ${builtins.concatStringsSep "," tags} ./...
             # copy static files that are generated with nix
             mkdir -p ./build/share
-            just css
             rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
           '';
           inherit src;
