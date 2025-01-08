@@ -127,22 +127,61 @@
           '';
         });
 
-        app = crossPkgs.buildGo123Module rec {
-          pname = "github.com/Gardego5/garrettdavis.dev";
-          version = "v0.0.1";
-          nativeBuildInputs = [ pkgs.rsync msgp-go ];
-          preBuild = ''
-            # generate static files
-            go generate -tags ${builtins.concatStringsSep "," tags} ./...
-            # copy static files that are generated with nix
-            mkdir -p ./build/share
-            "${tailwind}/bin/tailwindcss" -i input.css -o ./build/share/style.css
-            rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${font}/share/fonts" ./build/share
+        css = pkgs.stdenv.mkDerivation {
+          name = "css";
+          buildInputs = [ tailwind ];
+          src = ./.;
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/share
+            (cd $src && tailwindcss -i input.css -o $out/share/css/style.css)
           '';
-          inherit src;
-          vendorHash = "sha256-hQWoaVdZRqmRp2yveZCpUqiBqiXLZ7FMDDFX0FWzdNE=";
-          tags = [ "fonts" "static" ];
         };
+
+        staticFiles = pkgs.stdenv.mkDerivation {
+          name = "staticFiles";
+          src = ./static;
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/share
+            cp -r $src/* $out/share
+          '';
+        };
+
+        rsyncDerivations = (name: drvs:
+          pkgs.stdenv.mkDerivation {
+            inherit name;
+            nativeBuildInputs = [ pkgs.rsync ];
+            phases = [ "installPhase" ];
+            installPhase = builtins.concatStringsSep "\n" (builtins.map (drv:
+              "rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r '${drv}/${name}' $out")
+              drvs);
+          });
+
+        build = rsyncDerivations "share" [ font css staticFiles ];
+
+        app = let
+          module = rec {
+            inherit src;
+            pname = "github.com/Gardego5/garrettdavis.dev";
+            version = "v0.0.1";
+            nativeBuildInputs = [ pkgs.rsync msgp-go ];
+            preBuild = ''
+              # generate static files
+              go generate -tags ${builtins.concatStringsSep "," tags} ./...
+
+              # copy static files that are generated with nix
+              rsync -q -av --no-o --no-g --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "${build}/share" .
+              mv share build
+            '';
+            ldflags = [ ];
+            vendorHash = "sha256-hQWoaVdZRqmRp2yveZCpUqiBqiXLZ7FMDDFX0FWzdNE=";
+            tags = [ "fonts" "static" ];
+          };
+          cacheId = builtins.hashString "md5" (builtins.toJSON module);
+        in crossPkgs.buildGo123Module (module // {
+          ldflags = module.ldflags ++ [ "-X 'main.CacheID=${cacheId}'" ];
+        });
 
         dockerImage = crossPkgs.dockerTools.buildImage {
           name = "registry.fly.io/${name}";
@@ -152,16 +191,12 @@
           config = {
             Expose = 3000;
             Cmd = [ "${app}/bin/garrettdavis.dev" ];
-            Env = [
-              "FONTS_DIR=${font}/share/fonts"
-              "PORT=3000"
-              "CACHE_ID=${builtins.hashString "md5" (builtins.toString app)}"
-            ];
+            Env = [ "PORT=3000" ];
           };
         };
 
       in {
-        packages = { inherit app dockerImage font tailwind; };
+        packages = { inherit app build css dockerImage font tailwind; };
 
         devShells = {
           default = pkgs.mkShell {

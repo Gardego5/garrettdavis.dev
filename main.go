@@ -31,7 +31,6 @@ import (
 var (
 	Env = utils.Must(env.Load[struct {
 		ApplicationSecret string        `env:"APPLICATION_SECRET" validate:"required"`
-		CacheID           string        `env:"CACHE_ID" validate:"required"`
 		GithubOauthId     string        `env:"GITHUB_OAUTH_CLIENT_ID" validate:"required"`
 		GithubOauthSecret string        `env:"GITHUB_OAUTH_CLIENT_SECRET" validate:"required"`
 		Host              string        `env:"HOST=0.0.0.0" validate:"required"`
@@ -59,13 +58,14 @@ var (
 	Presentations = presentations.New()
 	Resume        = resume.New(Validate)
 
-	//go:embed static
-	Static embed.FS
-	//go:embed build/share/fonts
-	Fonts embed.FS
+	// these are assets / configuration included at build time
+	//go:embed build
+	Build        embed.FS
+	CacheID      string
+	Static       = utils.Must(fs.Sub(Build, "build"))
+	StaticPrefix = fmt.Sprintf("/static/%s", CacheID)
 
-	StaticPrefix = fmt.Sprintf("/static/%s", Env.CacheID)
-	Mux          = mux.NewServeMux(func(m *mux.ServeMux) {
+	Mux = mux.NewServeMux(func(m *mux.ServeMux) {
 		m.Group("/admin", func(m *mux.ServeMux) {
 			m.Group("/messages", func(m *mux.ServeMux) {
 				h := routes.NewAdminMessages(Messages)
@@ -103,24 +103,8 @@ var (
 
 		m.Handle("GET /resume", routes.NewResume())
 
-		m.Group(StaticPrefix, func(m *mux.ServeMux) {
-			// static assets
-			static, err := fs.Sub(Static, "static")
-			if err != nil {
-				Logger.Error("startup error - error getting static assets fs", "error", err)
-				os.Exit(1)
-			}
-			m.Handle("GET /", http.StripPrefix(StaticPrefix, middleware.FileServerFS(static)))
-
-			// fonts
-			fonts, err := fs.Sub(Fonts, "build/share/fonts")
-			if err != nil {
-				Logger.Error("statup error - error getting font static assets fs", "error", err)
-				os.Exit(1)
-			}
-			m.Handle("GET /fonts/", http.StripPrefix(StaticPrefix+"/fonts", middleware.FileServerFS(fonts)))
-		},
-			middleware.NeuteredFileSystem,
+		m.Handle("GET "+StaticPrefix+"/", http.StripPrefix(StaticPrefix, middleware.FileServerFS(Static)),
+			middleware.FileSystem,
 			mux.MiddlewareFunc(func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Cache-Control", "max-age=31536000, immutable")
