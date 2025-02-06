@@ -132,7 +132,7 @@
 
         css = pkgs.stdenv.mkDerivation {
           name = "css";
-          buildInputs = [ tailwind ];
+          nativeBuildInputs = [ tailwind ];
           inherit src;
           installPhase = ''
             mkdir -p $out/share

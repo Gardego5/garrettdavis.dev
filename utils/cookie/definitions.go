@@ -8,6 +8,7 @@ var (
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   300,
+		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	}
 
@@ -15,7 +16,7 @@ var (
 		Name:     "garrettdavisdev-session",
 		Path:     "/",
 		HttpOnly: true,
-		//Secure:   true,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	}
 )
