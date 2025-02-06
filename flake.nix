@@ -105,17 +105,17 @@
 
           hash = {
             aarch64-darwin =
-              "sha256-hH9+h6jtXS9uT5mujDRTtjRM2onG8ZQsexOlMaIoXv4=";
+              "sha256-mJqmHIRPSO53BS9OvBphntYLznYG/7ziFNz7Bpeziio=";
             aarch64-linux =
-              "sha256-yDKmh7DZl62FCZrSzKe14tK4dg5Cqxijx/O/E6+NiLY=";
+              "sha256-N9iZ6R/icwdFl9T0g6GQAggQE+e2qMoVcjdgAfIOk/M=";
             x86_64-linux =
-              "sha256-tSn4e+i+48/WikqK7VHBYPdbU1ypxrlMxTJi6ZzH1gw=";
+              "sha256-1I2E+e1KCXBcWFB6A236cvkChIC8nXgChU/npmBLwGg=";
             x86_64-darwin =
-              "sha256-iMPHW3snWY9nWgRv6+0IS3Zh29LC0kYmzfwOcJM8xN0=";
+              "sha256-cn3ETJ3cw7oQoeCSi115AR29jY/+uDmyHMhNqSHBswg=";
           }.${system} or (throwSystem "missing hash");
 
         in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
-          version = "4.0.4";
+          version = "4.0.0-beta.9";
           buildInputs = [ ];
           src = pkgs.fetchurl {
             url =
