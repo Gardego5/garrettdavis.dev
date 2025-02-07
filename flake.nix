@@ -98,24 +98,24 @@
 
           plat = {
             aarch64-darwin = "macos-arm64";
-            aarch64-linux = "linux-arm64-musl";
+            aarch64-linux = "linux-arm64";
             x86_64-darwin = "macos-x64";
-            x86_64-linux = "linux-x64-musl";
+            x86_64-linux = "linux-x64";
           }.${system} or (throwSystem "missing platform");
 
           hash = {
             aarch64-darwin =
-              "sha256-mJqmHIRPSO53BS9OvBphntYLznYG/7ziFNz7Bpeziio=";
+              "sha256-hH9+h6jtXS9uT5mujDRTtjRM2onG8ZQsexOlMaIoXv4=";
             aarch64-linux =
-              "sha256-N9iZ6R/icwdFl9T0g6GQAggQE+e2qMoVcjdgAfIOk/M=";
-            x86_64-linux =
-              "sha256-1I2E+e1KCXBcWFB6A236cvkChIC8nXgChU/npmBLwGg=";
+              "sha256-wFUHnzVrwg/NsWEKHXMvgHSX8AuXUgwcktBt8fahu3A=";
             x86_64-darwin =
-              "sha256-cn3ETJ3cw7oQoeCSi115AR29jY/+uDmyHMhNqSHBswg=";
+              "sha256-iMPHW3snWY9nWgRv6+0IS3Zh29LC0kYmzfwOcJM8xN0=";
+            x86_64-linux =
+              "sha256-ni5tivbbuV3U31ydmd9jBLBd8dH3cAAPFwSHmRAXubQ=";
           }.${system} or (throwSystem "missing hash");
 
         in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
-          version = "4.0.0-beta.9";
+          version = "4.0.4";
           buildInputs = [ ];
           src = pkgs.fetchurl {
             url =
