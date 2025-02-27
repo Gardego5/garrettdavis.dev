@@ -91,48 +91,9 @@
           vendorHash = "sha256-aWS13hx7ZVJGArBS381GJTvhd8Kl6WtbMIGEGV/iChY=";
         };
 
-        tailwind = let
-          throwSystem = reason:
-            throw
-            "tailwindcss has not been packaged for ${system} yet (${reason}).";
-
-          plat = {
-            aarch64-darwin = "macos-arm64";
-            aarch64-linux = "linux-arm64";
-            x86_64-darwin = "macos-x64";
-            x86_64-linux = "linux-x64";
-          }.${system} or (throwSystem "missing platform");
-
-          hash = {
-            aarch64-darwin =
-              "sha256-hH9+h6jtXS9uT5mujDRTtjRM2onG8ZQsexOlMaIoXv4=";
-            aarch64-linux =
-              "sha256-wFUHnzVrwg/NsWEKHXMvgHSX8AuXUgwcktBt8fahu3A=";
-            x86_64-darwin =
-              "sha256-iMPHW3snWY9nWgRv6+0IS3Zh29LC0kYmzfwOcJM8xN0=";
-            x86_64-linux =
-              "sha256-ni5tivbbuV3U31ydmd9jBLBd8dH3cAAPFwSHmRAXubQ=";
-          }.${system} or (throwSystem "missing hash");
-
-        in pkgs.tailwindcss.overrideAttrs (final: prev: rec {
-          version = "4.0.4";
-          buildInputs = [ ];
-          src = pkgs.fetchurl {
-            url =
-              "https://github.com/tailwindlabs/tailwindcss/releases/download/v${version}/tailwindcss-${plat}";
-            inherit hash;
-          };
-          sourceRoot = ".";
-          installPhase = ''
-            runHook preInstall
-            install -m755 -D $src $out/bin/tailwindcss
-            runHook postInstall
-          '';
-        });
-
         css = pkgs.stdenv.mkDerivation {
           name = "css";
-          nativeBuildInputs = [ tailwind ];
+          nativeBuildInputs = [ pkgs.tailwindcss_4 ];
           inherit src;
           installPhase = ''
             mkdir -p $out/share
@@ -198,7 +159,7 @@
         };
 
       in {
-        packages = { inherit app build css dockerImage font tailwind; };
+        packages = { inherit app build css dockerImage font; };
 
         devShells = {
           default = pkgs.mkShell {
@@ -209,7 +170,7 @@
               gopls
               just
               msgp-go
-              tailwind
+              tailwindcss_4
               redis
               turso-cli
               wire
