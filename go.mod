@@ -8,7 +8,7 @@ require (
 	github.com/Blank-Xu/sqlx-adapter v0.0.0-20240923201953-115a935429dd
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Gardego5/goutils v0.0.3-0.20241104151506-1ee9ee93e910
-	github.com/Gardego5/htmdsl v0.0.10-0.20241024060104-373fd7fadcd6
+	github.com/Gardego5/htmdsl v0.0.10-0.20250305084843-fa62484a2439
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.28.3
@@ -58,6 +58,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/monoculum/formam v3.5.5+incompatible // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect

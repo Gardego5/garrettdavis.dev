@@ -32,7 +32,7 @@ func (h *Blog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	render.Page(w, r,
 		Fragment{
 			Title{post.Title},
-			If(post.Description != "", Meta{{"name", "description"}, {"content", post.Description}}),
+			If(post.Description != "", Meta{"name": "description", "content": post.Description}),
 			Style{PreEscaped(post.Css)},
 		},
 		components.Header{Title: post.Title},

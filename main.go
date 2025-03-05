@@ -26,6 +26,7 @@ import (
 	"github.com/Gardego5/garrettdavis.dev/utils/symetric"
 	"github.com/Gardego5/goutils/env"
 	"github.com/go-playground/validator/v10"
+	"github.com/monoculum/formam"
 )
 
 var (
@@ -128,6 +129,7 @@ var (
 			middleware.Syringe(Resume),
 			middleware.Syringe(Validate),
 			middleware.Syringe(utils.Ptr(render.StaticPathPrefix(StaticPrefix))),
+			middleware.Syringe(formam.NewDecoder(&formam.DecoderOptions{TagName: "q"})),
 		),
 	)
 )

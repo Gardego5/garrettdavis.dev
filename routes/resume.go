@@ -20,12 +20,12 @@ func (*Resume) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	render.Page(w, r,
 		Fragment{
 			Title{"Resume - Garrett Davis"},
-			Meta{{"name", "description"}, {"content", "Garrett Davis' resume"}},
+			Meta{"name": "description", "content": "Garrett Davis' resume"},
 		},
 
 		Div{Class("fixed top-0 right-0 flex gap-2 p-2 print:hidden"),
-			Button{Attrs{{"x-data"}, {"x-on:click", "window.print()"}, {"title", "Print this page."}},
-				Element("iconify-icon", Attrs{{"icon", "ph:printer"}, {"width", "36"}, {"height", "36"}}),
+			Button{Attrs{"x-data": nil, "x-on:click": "window.print()", "title": "Print this page."},
+				Element("iconify-icon", Attrs{"icon": "ph:printer", "width": 36, "height": 36}),
 			},
 		},
 

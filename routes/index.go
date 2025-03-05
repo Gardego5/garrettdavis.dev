@@ -17,7 +17,7 @@ type BlogPostSummary struct{ *blog.Post }
 func (p BlogPostSummary) Render(ctx context.Context) RenderedHTML {
 	return Div{Class("flex flex-col gap-2 my-4"),
 		H2{Class("text-xl"),
-			A{Attrs{{"href", fmt.Sprintf("/blog/%s", p.Name)}}, p.Title},
+			A{Attrs{"href": fmt.Sprintf("/blog/%s", p.Name)}, p.Title},
 		},
 		P{Class("text-gray-500 text-base"), p.Description},
 	}.Render(ctx)
@@ -39,10 +39,14 @@ func (h *Index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	render.Page(w, r,
 		Fragment{
 			Title{"Garrett Davis"},
-			Meta{{"name", "description"}, {"content", "Garrett Davis is a young software developer who cares deaply about creating great software for people."}},
+			Meta{
+				"name":    "description",
+				"content": "Garrett Davis is a young software developer who cares deaply about creating great software for people.",
+			},
 		},
 
 		components.Header{},
+
 		components.Margins{
 			Main{Class("text-lg"),
 				P{Class("mb-12"),
@@ -68,21 +72,17 @@ func (h *Index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				},
 
 				Div{Class("flex items-center justify-center gap-4 my-4"),
-					Div{
-						A{Attrs{
-							{"target", "_blank"},
-							{"rel", "noopener noreferrer"},
-							{"href", "https://github.com/Gardego5"},
-							{"aria-label", "View Garrett's GitHub Profile"},
-							{"class", "border border-slate-300 dark:border-slate-500 bg-zinc-50 dark:bg-zinc-950 border-dotted p-2 pl-2 sm:pl-0.5 flex text-baseline h-8 items-center text-sm gap-1 text-nowrap"}},
-							Element("iconify-icon", Attrs{
-								{"icon", "mdi:github"},
-								{"width", "32"}, {"height", "32"},
-								{"class", "sm:scale-75"},
-							}),
-							Span{Class("hidden sm:inline"), "github"},
+					Div{A{Class("border border-slate-300 dark:border-slate-500 bg-zinc-50 dark:bg-zinc-950 border-dotted p-2 pl-2 sm:pl-0.5 flex text-baseline h-8 items-center text-sm gap-1 text-nowrap"),
+						Attrs{
+							"target":     "_blank",
+							"rel":        "noopener noreferrer",
+							"href":       "https://github.com/Gardego5",
+							"aria-label": "View Garrett's GitHub Profile",
 						},
-					},
+						Element("iconify-icon", Class("sm:scale-75"),
+							Attrs{"height": 32, "width": 32, "icon": "mdi:github"}),
+						Span{Class("hidden sm:inline"), "github"},
+					}},
 
 					Span{Class("text-sm text-center"),
 						Span{Class("text-nowrap"), "<--"},
@@ -90,21 +90,17 @@ func (h *Index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						Span{Class("text-nowrap"), "-->"},
 					},
 
-					Div{
-						A{Attrs{
-							{"target", "_blank"},
-							{"rel", "noopener noreferrer"},
-							{"href", "https://www.linkedin.com/in/garrett-davis-8793a721b/"},
-							{"aria-label", "View Garrett's LinkedIn Profile"},
-							{"class", "border border-slate-300 dark:border-slate-500 bg-zinc-50 dark:bg-zinc-950 border-dotted p-2 pr-2 sm:pr-0.5 flex text-baseline h-8 items-center text-sm gap-1 text-nowrap"}},
-							Span{Class("hidden sm:inline"), "linkedin"},
-							Element("iconify-icon", Attrs{
-								{"icon", "mdi:linkedin"},
-								{"width", "32"}, {"height", "32"},
-								{"class", "sm:scale-75"},
-							}),
+					Div{A{Class("border border-slate-300 dark:border-slate-500 bg-zinc-50 dark:bg-zinc-950 border-dotted p-2 pr-2 sm:pr-0.5 flex text-baseline h-8 items-center text-sm gap-1 text-nowrap"),
+						Attrs{
+							"target":     "_blank",
+							"rel":        "noopener noreferrer",
+							"href":       "https://www.linkedin.com/in/garrett-davis-8793a721b/",
+							"aria-label": "View Garrett's LinkedIn Profile",
 						},
-					},
+						Span{Class("hidden sm:inline"), "linkedin"},
+						Element("iconify-icon", Class("sm:scale-75"),
+							Attrs{"height": 32, "width": 32, "icon": "mdi:linkedin"}),
+					}},
 				},
 
 				Hr{},

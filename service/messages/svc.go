@@ -3,28 +3,38 @@ package messages
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Gardego5/garrettdavis.dev/model"
 	"github.com/jmoiron/sqlx"
 )
 
 type Service struct {
-	db            *sqlx.DB
-	listMessage   *sqlx.NamedStmt
-	deleteMessage *sqlx.NamedStmt
-	createMessage *sqlx.NamedStmt
+	db              *sqlx.DB
+	listMessageAsc  *sqlx.NamedStmt
+	listMessageDesc *sqlx.NamedStmt
+	deleteMessage   *sqlx.NamedStmt
+	createMessage   *sqlx.NamedStmt
 }
 
 func New(db *sqlx.DB) (*Service, error) {
 	svc, err := Service{db: db}, error(nil)
 
-	if svc.listMessage, err = svc.db.PrepareNamed(`
-SELECT ROW_NUMBER() OVER (ORDER BY created_at) as id,
+	const LIST_TEMPLATE = `
+SELECT ROW_NUMBER() OVER (ORDER BY created_at %s) as id,
        *
   FROM contact_messages
  LIMIT :limit
 OFFSET :offset
-`); err != nil {
+`
+
+	if svc.listMessageAsc, err = svc.db.PrepareNamed(
+		fmt.Sprintf(LIST_TEMPLATE, "ASC")); err != nil {
+		return nil, err
+	}
+
+	if svc.listMessageDesc, err = svc.db.PrepareNamed(
+		fmt.Sprintf(LIST_TEMPLATE, "DESC")); err != nil {
 		return nil, err
 	}
 
@@ -48,15 +58,26 @@ VALUES (:name, :email, :message, :created_at)`); err != nil {
 	return &svc, nil
 }
 
-type ListMessageInput struct {
-	Limit  int `db:"limit"`
-	Offset int `db:"offset"`
-}
+type (
+	ListMessageInputSort string
+	ListMessageInput     struct {
+		Limit  int `db:"limit"`
+		Offset int `db:"offset"`
+		Sort   ListMessageInputSort
+	}
+)
 
-func (svc *Service) ListMessages(ctx context.Context, input *ListMessageInput) ([]model.ContactMessage, error) {
-	output := []model.ContactMessage{}
-	err := svc.listMessage.SelectContext(ctx, &output, input)
-	return output, err
+const ListMessageInputSortASC ListMessageInputSort = "ASC"
+const ListMessageInputSortDESC ListMessageInputSort = "DESC"
+
+func (svc *Service) ListMessages(ctx context.Context, input *ListMessageInput) (out []model.ContactMessage, err error) {
+	switch input.Sort {
+	case ListMessageInputSortASC:
+		err = svc.listMessageAsc.SelectContext(ctx, &out, input)
+	case ListMessageInputSortDESC:
+		err = svc.listMessageDesc.SelectContext(ctx, &out, input)
+	}
+	return
 }
 
 type DeleteMessageInput struct {
@@ -73,9 +94,15 @@ func (svc *Service) CreateMessage(ctx context.Context, input *model.ContactMessa
 	return err
 }
 
+func (svc *Service) CountMessages(ctx context.Context) (count int, err error) {
+	err = svc.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM contact_messages")
+	return
+}
+
 func (svc *Service) Close() error {
 	return errors.Join(
-		svc.listMessage.Close(),
+		svc.listMessageAsc.Close(),
+		svc.listMessageDesc.Close(),
 		svc.deleteMessage.Close(),
 		svc.createMessage.Close(),
 	)

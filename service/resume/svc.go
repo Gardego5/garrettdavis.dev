@@ -66,10 +66,10 @@ func (d ResumeDoc) Render(context.Context) RenderedHTML {
 		H2{Class("leading-7 tracking-lighter col-start-1"), "Contact"},
 		Ul{Class("col-start-2"),
 			Li{"Email: ", A{Attrs{
-				{"x-data", `{user:'contact',domain:window.location.hostname}`},
-				{"x-init", `$el.href = 'mailto:' + $data.user + '@' + $data.domain`},
+				"x-data": `{user:'contact',domain:window.location.hostname}`,
+				"x-init": `$el.href = 'mailto:' + $data.user + '@' + $data.domain`,
 			},
-				"contact [at] ", Span{Attrs{{"x-text", "domain"}}},
+				"contact [at] ", Span{Attrs{"x-text": "domain"}},
 			}},
 
 			Li{"Location: ", "Hillsboro, Oregon"},

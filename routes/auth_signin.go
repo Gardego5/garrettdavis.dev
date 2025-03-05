@@ -40,13 +40,13 @@ func (h *AuthSignin) GET(w http.ResponseWriter, r *http.Request) {
 
 	render.Page(w, r, nil,
 		components.Header{},
-		components.Margins(Form{Attrs{{"method", "post"}, {"action", "/auth/signin"}},
-			Button{Attrs{{"type", "submit"}}, "Sign in"},
+		components.Margins{Form{Attrs{"method": "post", "action": "/auth/signin"}},
+			Button{Attrs{"type": "submit"}, "Sign in"},
 			If(c != nil, func() any {
 				value, _ := symetric.Decrypt(h.block, c.Value)
 				return P{"Cookie: ", base64.RawURLEncoding.EncodeToString([]byte(value))}
 			}),
-		}))
+		})
 }
 
 func (h *AuthSignin) POST(w http.ResponseWriter, r *http.Request) {
@@ -83,12 +83,12 @@ func (h *AuthSignin) POST(w http.ResponseWriter, r *http.Request) {
 	q.Set("redirect_uri", redirectUri)
 	q.Set("allow_signup", "false")
 	q.Set("state", state)
-	u := fmt.Sprintf("https://github.com/login/oauth/authorize?%s", q.Encode())
+	href := fmt.Sprintf("https://github.com/login/oauth/authorize?%s", q.Encode())
 	render.Page(w, r, nil,
 		components.Header{},
-		components.Margins{Attrs{{"x-data"}, {"@click", "$refs.authorize.click()"}},
+		components.Margins{Attrs{"x-data": nil, "x-init": "$refs.authorize.click()"},
 			P{"Redirecting to github for authentication..."},
 			P{"If you are not redirected, click the link below."},
-			A{Attrs{{"href", u}, {"x-ref", "authorize"}}, "Sign in with Github"},
+			A{Attrs{"href": href, "x-ref": "authorize"}, "Sign in with Github"},
 		})
 }
