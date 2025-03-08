@@ -8,7 +8,7 @@ require (
 	github.com/Blank-Xu/sqlx-adapter v0.0.0-20240923201953-115a935429dd
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Gardego5/goutils v0.0.3-0.20241104151506-1ee9ee93e910
-	github.com/Gardego5/htmdsl v0.0.10-0.20250305084843-fa62484a2439
+	github.com/Gardego5/htmdsl v0.0.10-0.20250306054903-9eb104ac1cb3
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.28.3

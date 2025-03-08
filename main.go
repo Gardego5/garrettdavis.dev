@@ -71,8 +71,8 @@ var (
 		m.Group("/admin", func(m *mux.ServeMux) {
 			m.Group("/messages", func(m *mux.ServeMux) {
 				h := routes.NewAdminMessages(Messages)
-				m.HandleFunc("GET", h.GetAdminMessage)
-				m.HandleFunc("DELETE /{id}", h.DeleteAdminMessage)
+				m.HandleFunc("GET", h.GET)
+				m.HandleFunc("DELETE /{id}", h.DELETE)
 			})
 			m.Handle("GET /user", routes.NewAdminUser(CurrentUser))
 			m.Group("/coffee", func(m *mux.ServeMux) {

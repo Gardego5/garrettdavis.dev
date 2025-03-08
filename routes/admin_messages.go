@@ -3,7 +3,6 @@ package routes
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/Gardego5/garrettdavis.dev/resource/render"
 	"github.com/Gardego5/garrettdavis.dev/service/messages"
 	. "github.com/Gardego5/htmdsl"
-	. "github.com/Gardego5/htmdsl/util"
 	"github.com/elliotchance/pie/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/monoculum/formam"
@@ -29,7 +27,7 @@ func NewAdminMessages(
 	return &AdminMessages{messages: messages}
 }
 
-func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) {
+func (h *AdminMessages) GET(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := access.Logger(ctx, "GetAdminUser")
 
@@ -37,7 +35,7 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 		Sort   messages.ListMessageInputSort `q:"sort"   validate:"oneof=ASC DESC"`
 		Limit  int                           `q:"limit"  validate:"min=1,max=100"`
 		Offset int                           `q:"offset" validate:"min=0"`
-	}{"ASC", 10, 0}
+	}{messages.ListMessageInputSortDESC, 10, 0}
 	r.ParseForm()
 	access.Get[formam.Decoder](ctx).Decode(r.Form, &q)
 	if err := access.Get[validator.Validate](ctx).Struct(q); err != nil {
@@ -100,83 +98,90 @@ func (h *AdminMessages) GetAdminMessage(w http.ResponseWriter, r *http.Request) 
 		}),
 	}
 
-	var isFirstRender bool
-	{
-		currentUrlHeader := r.Header.Get("HX-Current-URL")
-		url, err := url.Parse(currentUrlHeader)
-		switch {
-		case currentUrlHeader == "":
-			isFirstRender = true
-		case err != nil:
-			logger.Warn("Error parsing current URL", "error", err)
-			isFirstRender = true
-		default:
-			isFirstRender = url.Path != r.URL.Path
-		}
+	countDisplay := Div{Id("messages-count"),
+		Class("inline-flex gap-2 justify-self-center col-span-full md:col-span-1 xs:row-start-2 md:row-start-1"),
+		Button{Class("disabled:opacity-50"), Attrs{
+			"disabled": AttrIf(q.Offset == 0),
+			"name":     "offset",
+			"value":    0,
+		}, "<--"},
+
+		Button{Class("disabled:opacity-50"), Attrs{
+			"disabled": AttrIf(q.Offset == 0),
+			"name":     "offset",
+			"value":    max(q.Offset+q.Offset%q.Limit-q.Limit, 0),
+		}, "<"},
+
+		P{Class("text-gray-400"),
+			q.Offset + 1, " - ", q.Offset + len(msgs), " of ", count,
+		},
+
+		Button{Class("disabled:opacity-50"), Attrs{
+			"disabled": AttrIf(q.Offset+len(msgs) >= count),
+			"name":     "offset",
+			"value":    q.Offset + q.Offset%q.Limit + q.Limit,
+		}, ">"},
+
+		Button{Class("disabled:opacity-50"), Attrs{
+			"disabled": AttrIf(q.Offset+len(msgs) >= count),
+			"name":     "offset",
+			"value":    count - count%q.Limit,
+		}, "-->"},
+
+		Input{"hidden": nil, "name": "offset", "value": q.Offset},
 	}
 
-	countDisplay := Div{Id("messages-count"), Class("text-gray-400"),
-		"Showing ",
-		Span{Id("messages-count.range-start"), q.Offset + 1},
-		"-",
-		Span{Id("messages-count.range-end"), q.Offset + len(msgs)},
-		" of ",
-		Span{Id("messages-count.total"), count},
-	}
-
-	if isFirstRender {
-
-		render.Page(w, r, nil, components.Header{Title: "Messages"}, components.Margins{
-			Form{Class("flex justify-between items-center pb-4"),
-				Attrs{
-					"hx-params":  "*",
-					"hx-swap":    "outerHTML swap:0.1s",
-					"hx-target":  "next ul",
-					"hx-trigger": "submit, change delay:500ms",
-				},
-
-				Div{Class("inline-block"),
-					Label{Attrs{"for": "messages-sort"}, "Sort: "},
-					Select{Id("messages-sort"), Attrs{
-						"name":   "sort",
-						"hx-get": "/admin/messages",
-					},
-						Option{If(q.Sort == messages.ListMessageInputSortASC, Attrs{"selected": nil}).Default(),
-							Attrs{"value": "ASC"}, "Oldest First"},
-						Option{If(q.Sort == messages.ListMessageInputSortDESC, Attrs{"selected": nil}).Default(),
-							Attrs{"value": "DESC"}, "Newest First"},
-					},
-				},
-
-				Div{Class("inline-block"),
-					Label{Attrs{"for": "messages-limit"}, "Limit: "},
-					Select{Id("messages-limit"), Attrs{
-						"name":    "limit",
-						"hx-get":  "/admin/messages",
-						"x-data":  fmt.Sprintf("{ selected: %d }", q.Limit),
-						"x-model": "selected",
-					},
-						Option{Attrs{"value": "10", ":selected": "selected === 10"}, "10"},
-						Option{Attrs{"value": "25", ":selected": "selected === 25"}, "25"},
-						Option{Attrs{"value": "100", ":selected": "selected === 100"}, "100"},
-					},
-				},
-
-				countDisplay,
-			},
-
-			list,
-		})
-	} else {
-		w.Header().Set("HX-Push-Url", r.URL.String())
+	if r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-Boosted") == "" {
+		// Is this a rerender with new search parameters?
+		w.Header().Set("HX-Replace-Url", r.URL.String())
 		RenderContext(w, r.Context(), Fragment{
 			list,
 			append(countDisplay, Attrs{"hx-swap-oob": true}),
 		})
+	} else {
+		// Or is this a fresh render after some kind of navigation?
+		render.Page(w, r, nil, components.Header{Title: "Messages"}, components.Margins{
+			Form{Class("grid grid-cols-2 md:grid-cols-3 items-center pb-4 px-4"),
+				Attrs{
+					"hx-params":  "*",
+					"hx-swap":    "outerHTML swap:0.1s",
+					"hx-target":  "next ul",
+					"hx-trigger": "change",
+					"hx-get":     "/admin/messages",
+				},
+
+				Div{Class("inline-block justify-self-start col-start-1 row-start-1"),
+					Label{Attrs{"for": "messages-sort"}, "Sort: "},
+					Select{Id("messages-sort"), Attrs{"name": "sort"},
+						Option{Attrs{
+							"value":    "DESC",
+							"selected": AttrIf(q.Sort == messages.ListMessageInputSortASC),
+						}, "Newest First"},
+						Option{Attrs{
+							"value":    "ASC",
+							"selected": AttrIf(q.Sort == messages.ListMessageInputSortASC),
+						}, "Oldest First"},
+					},
+				},
+
+				countDisplay,
+
+				Div{Class("inline-flex gap-4 align-items-center justify-self-end -col-start-2 row-start-1"),
+					Label{Attrs{"for": "messages-limit"}, "Limit: "},
+					Select{Id("messages-limit"), Attrs{"name": "limit"},
+						Option{Attrs{"selected": AttrIf(q.Limit == 10)}, 10},
+						Option{Attrs{"selected": AttrIf(q.Limit == 25)}, 25},
+						Option{Attrs{"selected": AttrIf(q.Limit == 100)}, 100},
+					},
+				},
+			},
+
+			list,
+		})
 	}
 }
 
-func (h *AdminMessages) DeleteAdminMessage(w http.ResponseWriter, r *http.Request) {
+func (h *AdminMessages) DELETE(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := access.Logger(ctx, "DeleteAdminMessage")
 
