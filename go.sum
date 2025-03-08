@@ -6,12 +6,6 @@ github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/Gardego5/goutils v0.0.3-0.20241104151506-1ee9ee93e910 h1:Gr4kybm22saS6Dc6oZJxbL7OalpcMnJ02juOLapUyIY=
 github.com/Gardego5/goutils v0.0.3-0.20241104151506-1ee9ee93e910/go.mod h1:/e1+y1dI3kCccnhENGjfZg5pD0UhJ5ZuyjDjcjLeZz4=
-github.com/Gardego5/htmdsl v0.0.10-0.20241024060104-373fd7fadcd6 h1:b6Q+FT5OW3ZgpKlNimwuTNWymJx2t/80t4z/y4CSHnY=
-github.com/Gardego5/htmdsl v0.0.10-0.20241024060104-373fd7fadcd6/go.mod h1:sxs9iYgqoqg0DSLGxGs6SQIkTP9vYIhuy/T++qlLOsQ=
-github.com/Gardego5/htmdsl v0.0.10-0.20250304081436-40e02d8bbf6b h1:6WDm/dFbjnKrKha0oXU0KXYYmB7LiAnC0dPHciWrJEc=
-github.com/Gardego5/htmdsl v0.0.10-0.20250304081436-40e02d8bbf6b/go.mod h1:sxs9iYgqoqg0DSLGxGs6SQIkTP9vYIhuy/T++qlLOsQ=
-github.com/Gardego5/htmdsl v0.0.10-0.20250305084843-fa62484a2439 h1:16Fp9PEKgxPalDhM49xV6ApLd/EXybvfBdq0G9MGU1U=
-github.com/Gardego5/htmdsl v0.0.10-0.20250305084843-fa62484a2439/go.mod h1:sxs9iYgqoqg0DSLGxGs6SQIkTP9vYIhuy/T++qlLOsQ=
 github.com/Gardego5/htmdsl v0.0.10-0.20250306054903-9eb104ac1cb3 h1:eFvUmw9wxwA8LUdrKcrBViu1jInxzwR0+pZBRfJFs/Y=
 github.com/Gardego5/htmdsl v0.0.10-0.20250306054903-9eb104ac1cb3/go.mod h1:sxs9iYgqoqg0DSLGxGs6SQIkTP9vYIhuy/T++qlLOsQ=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
