@@ -138,7 +138,7 @@
               mv share build
             '';
             ldflags = [ ];
-            vendorHash = "sha256-hQWoaVdZRqmRp2yveZCpUqiBqiXLZ7FMDDFX0FWzdNE=";
+            vendorHash = "sha256-xpN/Tm7Jylln0t2gjRc4LHEYtKJV2aTtlUFWuMEjVmw=";
             tags = [ "fonts" "static" ];
           };
           cacheId = builtins.hashString "md5" (builtins.toJSON module);
